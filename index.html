@@ -5456,14 +5456,15 @@ const VistaAlumno = (function () {
   /* El eje X no da para "Proyecto integrador": abrevia sin perder el sentido.
      La prosa de abajo sí usa el nombre completo. */
   function etiquetaEje(nombre) {
-    var t = String(nombre || '')
-      .replace(/^Primer\s+/i, '1er ').replace(/^Segundo\s+/i, '2.º ')
-      .replace(/^Tercer\s+/i, '3er ').replace(/^Cuarto\s+/i, '4.º ');
+    var t = String(nombre || '').trim();
+    /* Los parciales se abrevian como en la boleta: P1, P2, P3. */
+    var p = t.match(/^(primer|segundo|tercer|cuarto|quinto)\s+parcial/i);
+    if (p) return 'P' + ({ primer: 1, segundo: 2, tercer: 3, cuarto: 4, quinto: 5 }[p[1].toLowerCase()]);
     var corte = t.indexOf(' y ');
     if (corte > 0) t = t.slice(0, corte);
-    if (t.length > 14) {
-      var esp = t.lastIndexOf(' ', 14);
-      t = t.slice(0, esp > 5 ? esp : 14);
+    if (t.length > 9) {
+      var esp = t.lastIndexOf(' ', 9);
+      t = esp > 3 ? t.slice(0, esp) : t.slice(0, 9);
     }
     return t;
   }
