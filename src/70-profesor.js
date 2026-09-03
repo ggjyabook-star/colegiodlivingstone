@@ -1866,10 +1866,16 @@ const VistaProfesor = (function () {
         el.value = el.getAttribute('data-prev') || '';
         return;
       }
-      el.setAttribute('data-prev', crudo);
-      el.classList.add('cambiada');
+      /* M.guardarNota persiste, y el arranque repinta la vista al guardar: la
+         celda original puede haber quedado fuera del documento. Se vuelve a
+         buscar en la tabla vigente y, si nadie repintó, se recupera la misma. */
       var tabla = document.getElementById('pr-tabla-notas');
-      var tr = el.parentNode;
+      var celda = tabla ? tabla.querySelector('tr[data-fila="' + a.alumnoId +
+        '"] input.celda-nota[data-eval="' + a.evaluacionId + '"]') : null;
+      if (!celda) celda = el;
+      celda.setAttribute('data-prev', celda.value);
+      celda.classList.add('cambiada');
+      var tr = celda.parentNode;
       while (tr && tr.tagName !== 'TR') { tr = tr.parentNode; }
       if (tabla) recalcularTabla(tabla, tr, a.evaluacionId);
     },

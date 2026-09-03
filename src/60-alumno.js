@@ -296,11 +296,29 @@ const VistaAlumno = (function () {
     });
   }
 
+  /* El eje X no da para "Proyecto integrador": abrevia sin perder el sentido.
+     La prosa de abajo sí usa el nombre completo. */
+  function etiquetaEje(nombre) {
+    var t = String(nombre || '')
+      .replace(/^Primer\s+/i, '1er ').replace(/^Segundo\s+/i, '2.º ')
+      .replace(/^Tercer\s+/i, '3er ').replace(/^Cuarto\s+/i, '4.º ');
+    var corte = t.indexOf(' y ');
+    if (corte > 0) t = t.slice(0, corte);
+    if (t.length > 14) {
+      var esp = t.lastIndexOf(' ', 14);
+      t = t.slice(0, esp > 5 ? esp : 14);
+    }
+    return t;
+  }
+
   function panelTendencia(a) {
-    var pts = Q.rendimientoPorParcial(a.id) || [];
+    var crudos = Q.rendimientoPorParcial(a.id) || [];
+    var pts = crudos.map(function (p) {
+      return { etiqueta: etiquetaEje(p.etiqueta), valor: p.valor };
+    });
     var frase = 'Todavía no hay suficientes evaluaciones para leer una tendencia.';
-    if (pts.length >= 2) {
-      var ini = pts[0], fin = pts[pts.length - 1];
+    if (crudos.length >= 2) {
+      var ini = crudos[0], fin = crudos[crudos.length - 1];
       var d = Math.round((fin.valor - ini.valor) * 10) / 10;
       if (d >= 0.2) {
         frase = 'Tu promedio subió ' + d.toFixed(1) + ' puntos entre ' + U.esc(ini.etiqueta) +

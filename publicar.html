@@ -5446,11 +5446,29 @@ const VistaAlumno = (function () {
     });
   }
 
+  /* El eje X no da para "Proyecto integrador": abrevia sin perder el sentido.
+     La prosa de abajo sí usa el nombre completo. */
+  function etiquetaEje(nombre) {
+    var t = String(nombre || '')
+      .replace(/^Primer\s+/i, '1er ').replace(/^Segundo\s+/i, '2.º ')
+      .replace(/^Tercer\s+/i, '3er ').replace(/^Cuarto\s+/i, '4.º ');
+    var corte = t.indexOf(' y ');
+    if (corte > 0) t = t.slice(0, corte);
+    if (t.length > 14) {
+      var esp = t.lastIndexOf(' ', 14);
+      t = t.slice(0, esp > 5 ? esp : 14);
+    }
+    return t;
+  }
+
   function panelTendencia(a) {
-    var pts = Q.rendimientoPorParcial(a.id) || [];
+    var crudos = Q.rendimientoPorParcial(a.id) || [];
+    var pts = crudos.map(function (p) {
+      return { etiqueta: etiquetaEje(p.etiqueta), valor: p.valor };
+    });
     var frase = 'Todavía no hay suficientes evaluaciones para leer una tendencia.';
-    if (pts.length >= 2) {
-      var ini = pts[0], fin = pts[pts.length - 1];
+    if (crudos.length >= 2) {
+      var ini = crudos[0], fin = crudos[crudos.length - 1];
       var d = Math.round((fin.valor - ini.valor) * 10) / 10;
       if (d >= 0.2) {
         frase = 'Tu promedio subió ' + d.toFixed(1) + ' puntos entre ' + U.esc(ini.etiqueta) +
@@ -8543,10 +8561,16 @@ const VistaProfesor = (function () {
         el.value = el.getAttribute('data-prev') || '';
         return;
       }
-      el.setAttribute('data-prev', crudo);
-      el.classList.add('cambiada');
+      /* M.guardarNota persiste, y el arranque repinta la vista al guardar: la
+         celda original puede haber quedado fuera del documento. Se vuelve a
+         buscar en la tabla vigente y, si nadie repintó, se recupera la misma. */
       var tabla = document.getElementById('pr-tabla-notas');
-      var tr = el.parentNode;
+      var celda = tabla ? tabla.querySelector('tr[data-fila="' + a.alumnoId +
+        '"] input.celda-nota[data-eval="' + a.evaluacionId + '"]') : null;
+      if (!celda) celda = el;
+      celda.setAttribute('data-prev', celda.value);
+      celda.classList.add('cambiada');
+      var tr = celda.parentNode;
       while (tr && tr.tagName !== 'TR') { tr = tr.parentNode; }
       if (tabla) recalcularTabla(tabla, tr, a.evaluacionId);
     },
@@ -9193,22 +9217,38 @@ const VistaDireccion = (function () {
 
   /* --------------------------------------------------------------- gráficas */
 
+  /* Un renglón por mes: lo cobrado avanzando sobre lo esperado. Se lee de un
+     vistazo qué mes quedó corto, que es justo lo que revisa la dirección. */
   function graficaIngresos() {
     var meses = Q.ingresosPorMes() || [];
-    var series = [], tope = 0;
-    meses.forEach(function (m) {
-      var c = num(m.cobrado), e = num(m.esperado);
-      tope = Math.max(tope, c, e);
-      series.push({ etiqueta: m.etiqueta + ' · cobrado', valor: c, color: 'var(--serie-1)' });
-      series.push({ etiqueta: m.etiqueta + ' · esperado', valor: e, color: 'var(--linea-fuerte)' });
-    });
-    if (!series.length) {
+    if (!meses.length) {
       return U.vacio({ icono: 'dinero', titulo: 'Sin movimientos', texto: 'Todavía no hay colegiaturas generadas en el ciclo.' });
     }
-    return U.barras({ series: series, max: tope, formato: U.moneda }) +
-      '<div class="leyenda">' +
-      '<span class="leyenda-item"><span class="punto" style="background:var(--serie-1)"></span>Cobrado</span>' +
-      '<span class="leyenda-item"><span class="punto" style="background:var(--linea-fuerte)"></span>Esperado</span>' +
+    var totalC = 0, totalE = 0;
+    var filas = meses.map(function (m) {
+      var c = num(m.cobrado), e = num(m.esperado);
+      totalC += c; totalE += e;
+      var pct = e > 0 ? Math.round(c / e * 100) : 0;
+      var v = pct >= 100 ? 'ok' : (pct >= 70 ? 'aviso' : 'crit');
+      return '<div style="display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:.75rem">' +
+        '<span class="etiqueta" style="text-transform:none;letter-spacing:0;font-size:.8rem;color:var(--tinta-2)">' +
+          U.esc(m.etiqueta) + '</span>' +
+        '<div class="progreso" title="' + U.esc(U.moneda(c) + ' de ' + U.moneda(e)) + '">' +
+          '<div class="progreso-barra v-' + v + '" style="width:' + Math.min(100, pct) + '%"></div></div>' +
+        '<span class="mono nowrap" style="color:var(--tinta-2)">' +
+          U.moneda(c) + ' <span class="silencio">/ ' + U.moneda(e) + '</span></span>' +
+        '</div>';
+    }).join('');
+
+    var pctTotal = totalE > 0 ? Math.round(totalC / totalE * 100) : 0;
+    return '<div class="pila gap-1">' + filas + '</div>' +
+      '<div class="separador"></div>' +
+      '<div class="entre">' +
+        '<span class="etiqueta">Total del ciclo</span>' +
+        '<span class="fila gap-1">' +
+          U.badge(pctTotal + '% cobrado', pctTotal >= 90 ? 'ok' : (pctTotal >= 70 ? 'aviso' : 'crit')) +
+          '<span class="mono">' + U.moneda(totalC) + ' <span class="silencio">/ ' + U.moneda(totalE) + '</span></span>' +
+        '</span>' +
       '</div>';
   }
 

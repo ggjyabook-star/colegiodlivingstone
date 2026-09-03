@@ -269,22 +269,38 @@ const VistaDireccion = (function () {
 
   /* --------------------------------------------------------------- gráficas */
 
+  /* Un renglón por mes: lo cobrado avanzando sobre lo esperado. Se lee de un
+     vistazo qué mes quedó corto, que es justo lo que revisa la dirección. */
   function graficaIngresos() {
     var meses = Q.ingresosPorMes() || [];
-    var series = [], tope = 0;
-    meses.forEach(function (m) {
-      var c = num(m.cobrado), e = num(m.esperado);
-      tope = Math.max(tope, c, e);
-      series.push({ etiqueta: m.etiqueta + ' · cobrado', valor: c, color: 'var(--serie-1)' });
-      series.push({ etiqueta: m.etiqueta + ' · esperado', valor: e, color: 'var(--linea-fuerte)' });
-    });
-    if (!series.length) {
+    if (!meses.length) {
       return U.vacio({ icono: 'dinero', titulo: 'Sin movimientos', texto: 'Todavía no hay colegiaturas generadas en el ciclo.' });
     }
-    return U.barras({ series: series, max: tope, formato: U.moneda }) +
-      '<div class="leyenda">' +
-      '<span class="leyenda-item"><span class="punto" style="background:var(--serie-1)"></span>Cobrado</span>' +
-      '<span class="leyenda-item"><span class="punto" style="background:var(--linea-fuerte)"></span>Esperado</span>' +
+    var totalC = 0, totalE = 0;
+    var filas = meses.map(function (m) {
+      var c = num(m.cobrado), e = num(m.esperado);
+      totalC += c; totalE += e;
+      var pct = e > 0 ? Math.round(c / e * 100) : 0;
+      var v = pct >= 100 ? 'ok' : (pct >= 70 ? 'aviso' : 'crit');
+      return '<div style="display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:.75rem">' +
+        '<span class="etiqueta" style="text-transform:none;letter-spacing:0;font-size:.8rem;color:var(--tinta-2)">' +
+          U.esc(m.etiqueta) + '</span>' +
+        '<div class="progreso" title="' + U.esc(U.moneda(c) + ' de ' + U.moneda(e)) + '">' +
+          '<div class="progreso-barra v-' + v + '" style="width:' + Math.min(100, pct) + '%"></div></div>' +
+        '<span class="mono nowrap" style="color:var(--tinta-2)">' +
+          U.moneda(c) + ' <span class="silencio">/ ' + U.moneda(e) + '</span></span>' +
+        '</div>';
+    }).join('');
+
+    var pctTotal = totalE > 0 ? Math.round(totalC / totalE * 100) : 0;
+    return '<div class="pila gap-1">' + filas + '</div>' +
+      '<div class="separador"></div>' +
+      '<div class="entre">' +
+        '<span class="etiqueta">Total del ciclo</span>' +
+        '<span class="fila gap-1">' +
+          U.badge(pctTotal + '% cobrado', pctTotal >= 90 ? 'ok' : (pctTotal >= 70 ? 'aviso' : 'crit')) +
+          '<span class="mono">' + U.moneda(totalC) + ' <span class="silencio">/ ' + U.moneda(totalE) + '</span></span>' +
+        '</span>' +
       '</div>';
   }
 
