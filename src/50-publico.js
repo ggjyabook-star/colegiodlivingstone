@@ -113,6 +113,40 @@ const VistaPublica = (function () {
       (alto ? ' style="height:' + alto + '"' : '') + ' loading="lazy" decoding="async">';
   }
 
+  /* Las notas para padres: contenido editorial del sitio, de la más nueva a la
+     más vieja. Si el archivo de notas no está, el sitio se dibuja sin ellas. */
+  function notas() {
+    if (typeof NOTAS !== 'object' || !NOTAS || !NOTAS.length) return [];
+    return NOTAS.slice().sort(porFechaDesc);
+  }
+
+  function nota(id) {
+    var todas = notas();
+    for (var i = 0; i < todas.length; i++) if (todas[i].id === id) return todas[i];
+    return null;
+  }
+
+  /* Quien firma la nota: alguien del claustro o la dirección. */
+  function autorDe(n) {
+    var id = n && n.autorId ? n.autorId : '';
+    if (!id) return null;
+    if (id === 'dir-01' || (DB.direccion && DB.direccion.id === id)) return DB.direccion;
+    return Q.profesor(id) || null;
+  }
+
+  /* El único formato que aceptan los textos de una nota: **negritas**.
+     Se escapa primero y se marca después, para que nadie inyecte etiquetas. */
+  function enfasis(texto) {
+    return U.esc(String(texto == null ? '' : texto))
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function enlaceRuta(ruta, texto, clase, estilo) {
+    return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
+      ' data-accion="app:ir" ' + U.attr({ 'data-args': { ruta: ruta } }) + '>' +
+      U.esc(texto) + '</button>';
+  }
+
   function enlaceAncla(id, texto, clase, estilo) {
     return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
       ' data-accion="pub:ancla" ' + U.attr({ 'data-args': { id: id } }) + '>' +
@@ -138,6 +172,7 @@ const VistaPublica = (function () {
             ${enlaceAncla('colegio', 'Conócenos', 'opcional')}
             ${enlaceAncla('oferta', 'Oferta educativa', 'opcional')}
             ${enlaceAncla('claustro', 'Claustro', '')}
+            ${enlaceRuta('#/publico/notas', 'Notas para padres', '')}
             ${enlaceAncla('alianzas', 'Alianzas', 'opcional')}
             ${enlaceAncla('after', 'After Class', 'opcional')}
             ${enlaceAncla('admisiones', 'Informes', 'opcional')}
@@ -172,6 +207,7 @@ const VistaPublica = (function () {
               <li>${enlaceAncla('colegio', 'Conócenos', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('oferta', 'Oferta educativa', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('claustro', 'Claustro docente', '', RESET_ENLACE)}</li>
+              <li>${enlaceRuta('#/publico/notas', 'Notas para padres', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('alianzas', 'Nuestras alianzas', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('after', 'After Class', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('admisiones', 'Informes y admisiones', '', RESET_ENLACE)}</li>
@@ -594,6 +630,265 @@ const VistaPublica = (function () {
       </section>`;
   }
 
+  /* --------------------------------------------------- notas para padres -- */
+
+  /* Tarjeta de nota. La primera de una rejilla va ancha, con foto grande. */
+  function tarjetaNota(n, destacada) {
+    var a = autorDe(n);
+    return `
+      <button type="button" class="nota-item${destacada ? ' destacada' : ''}" data-accion="pub:nota"
+              ${U.attr({ 'data-args': { id: n.id } })}
+              aria-label="Leer la nota ${U.esc(n.titulo)}">
+        ${foto(n.foto, 'nota-foto')}
+        <div class="nota-cuerpo">
+          <div class="nota-tema">${U.icono(n.icono, 13)} ${U.esc(n.tema)}</div>
+          <h3 class="nota-tit">${U.esc(n.titulo)}</h3>
+          <p class="nota-gancho">${U.esc(recortar(n.gancho, destacada ? 200 : 128))}</p>
+          <div class="nota-meta">
+            ${a ? U.avatar(a, 'sm') : ''}
+            <span>${a ? U.esc(a.nombre) : U.esc(DB.escuela.nombre)}</span>
+            <span class="punto" aria-hidden="true">·</span>
+            <span>${U.fecha(n.fecha, 'corta')}</span>
+            <span class="punto" aria-hidden="true">·</span>
+            <span>${n.lectura} min de lectura</span>
+          </div>
+        </div>
+      </button>`;
+  }
+
+  /* En la portada van las tres más recientes; el resto vive en el índice. */
+  function bloqueNotas() {
+    var todas = notas();
+    if (!todas.length) return '';
+    var visibles = todas.slice(0, 3);
+    return `
+      <section class="bloque" id="notas" style="${ANCLA}">
+        <h2 class="bloque-tit">Notas para padres</h2>
+        <p class="intro">
+          Lo que hemos ido aprendiendo de estar cuarenta y tantos años frente a grupo, puesto por
+          escrito: orientación sobre el aprendizaje de los hijos, sobre cómo funciona la escuela
+          en México y sobre las decisiones que toca tomar en casa.
+        </p>
+        <div class="notas">
+          ${visibles.map(function (n, i) { return tarjetaNota(n, i === 0); }).join('')}
+        </div>
+        ${todas.length > visibles.length ? `
+          <div class="centro mt-2">
+            <button type="button" class="btn" data-accion="app:ir"
+                    ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+              ${U.icono('libro', 16)} Ver las ${todas.length} notas
+            </button>
+          </div>` : ''}
+      </section>`;
+  }
+
+  /* --------------------------------------------------- índice de las notas - */
+
+  function paginaNotas() {
+    var todas = notas();
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="mt-3">
+            ${U.migas([{ texto: 'Inicio', ruta: '#/publico' }, { texto: 'Notas para padres' }])}
+          </div>
+          <section class="bloque" style="padding-top:1.4rem">
+            <h1 class="bloque-tit" style="font-size:2.1rem">Notas para padres</h1>
+            <p class="intro" style="max-width:62ch">
+              Textos breves sobre aprendizaje, crianza y decisiones escolares, firmados por el
+              claustro del colegio. No son recomendaciones sueltas: cada nota dice de dónde sale
+              lo que afirma, para que usted pueda ir a la fuente si quiere.
+            </p>
+            ${todas.length
+              ? '<div class="notas">' +
+                todas.map(function (n, i) { return tarjetaNota(n, i === 0); }).join('') +
+                '</div>'
+              : U.vacio({
+                  icono: 'libro',
+                  titulo: 'Todavía no hay notas publicadas',
+                  texto: 'El colegio publicará aquí sus textos de orientación para las familias.'
+                })}
+          </section>
+          <section class="bloque" style="padding-top:0">
+            <div class="fila envuelve gap-1">
+              <button type="button" class="btn" data-accion="app:ir"
+                      ${U.attr({ 'data-args': { ruta: '#/publico' } })}>
+                ${U.icono('flecha-izq', 16)} Volver al inicio
+              </button>
+              <button type="button" class="btn btn-primario" data-accion="pub:ancla"
+                      ${U.attr({ 'data-args': { id: 'admisiones' } })}>
+                ${U.icono('chat', 16)} Hablar con admisiones
+              </button>
+            </div>
+          </section>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
+  /* ------------------------------------------------------ una nota entera - */
+
+  /* Dibuja un bloque del cuerpo. Lo que no reconoce, lo ignora en silencio. */
+  function bloqueDeNota(b) {
+    if (!b || !b.t) return '';
+    if (b.t === 'p') return '<p>' + enfasis(b.x) + '</p>';
+    if (b.t === 'h') return '<h2>' + enfasis(b.x) + '</h2>';
+    if (b.t === 'lista') {
+      return '<ul class="nota-lista">' + (b.x || []).map(function (i) {
+        return '<li>' + enfasis(i) + '</li>';
+      }).join('') + '</ul>';
+    }
+    if (b.t === 'pasos') {
+      return '<ol class="nota-pasos">' + (b.x || []).map(function (i) {
+        return '<li><span class="t">' + enfasis(i.t) + '</span>' +
+               '<span class="d">' + enfasis(i.x) + '</span></li>';
+      }).join('') + '</ol>';
+    }
+    if (b.t === 'dato') {
+      return '<aside class="nota-dato">' +
+        '<span class="ico">' + U.icono('info', 16) + '</span>' +
+        '<div>' + enfasis(b.x) + '</div></aside>';
+    }
+    if (b.t === 'cita') {
+      return '<blockquote class="cita nota-cita">&#8220;' + enfasis(b.x) + '&#8221;' +
+        (b.de ? '<footer>' + U.esc(b.de) + '</footer>' : '') + '</blockquote>';
+    }
+    if (b.t === 'tabla') {
+      return '<div class="tabla-envoltura nota-tabla"><table class="tabla"><thead><tr>' +
+        (b.cab || []).map(function (c) { return '<th>' + U.esc(c) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' +
+        (b.filas || []).map(function (f) {
+          return '<tr>' + f.map(function (c, i) {
+            return '<td' + (i ? ' class="num mono"' : '') + '>' + enfasis(c) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+    }
+    return '';
+  }
+
+  function firmaDeNota(n) {
+    var a = autorDe(n);
+    if (!a) return '';
+    var esDocente = a.rol === 'profesor';
+    return `
+      <div class="nota-firma">
+        ${U.avatar(a, 'lg')}
+        <div class="crece">
+          <div class="etiqueta">Escrito por</div>
+          <div class="nom">${U.esc(a.nombre)}</div>
+          <div class="silencio" style="font-size:.85rem">${U.esc(a.titulo || a.cargo || '')}</div>
+        </div>
+        ${esDocente ? `
+          <button type="button" class="btn btn-suave btn-sm" data-accion="pub:profesor"
+                  ${U.attr({ 'data-args': { id: a.id } })}>
+            ${U.icono('usuario', 15)} Ver su perfil
+          </button>` : ''}
+      </div>`;
+  }
+
+  function otrasNotas(n) {
+    var otras = notas().filter(function (o) { return o.id !== n.id; }).slice(0, 2);
+    if (!otras.length) return '';
+    return `
+      <section class="bloque" style="padding-top:.5rem">
+        <h2 class="bloque-tit" style="font-size:1.35rem">Siga leyendo</h2>
+        <div class="notas notas-pie">
+          ${otras.map(function (o) { return tarjetaNota(o, false); }).join('')}
+        </div>
+      </section>`;
+  }
+
+  function notaNoEncontrada() {
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="panel mt-3">
+            <div class="panel-cuerpo">
+              ${U.vacio({
+                icono: 'libro',
+                titulo: 'No encontramos esa nota',
+                texto: 'La liga apunta a un texto que ya no está publicado en el sitio.'
+              })}
+              <div class="centro">
+                <button type="button" class="btn btn-primario" data-accion="app:ir"
+                        ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+                  ${U.icono('flecha-izq', 16)} Ver todas las notas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
+  function paginaNota(ctx) {
+    var id = ctx.params && ctx.params.id ? ctx.params.id : '';
+    var n = id ? nota(id) : null;
+    if (!n) return notaNoEncontrada();
+    var a = autorDe(n);
+
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="mt-3">
+            ${U.migas([
+              { texto: 'Inicio', ruta: '#/publico' },
+              { texto: 'Notas para padres', ruta: '#/publico/notas' },
+              { texto: recortar(n.titulo, 42) }
+            ])}
+          </div>
+
+          <article class="nota-hoja">
+            <div class="nota-tema">${U.icono(n.icono, 13)} ${U.esc(n.tema)}</div>
+            <h1>${U.esc(n.titulo)}</h1>
+            <p class="nota-entrada">${U.esc(n.gancho)}</p>
+            <div class="nota-meta grande">
+              ${a ? U.avatar(a, 'sm') : ''}
+              <span>${a ? U.esc(a.nombre) : U.esc(DB.escuela.nombre)}</span>
+              <span class="punto" aria-hidden="true">·</span>
+              <span>${U.fecha(n.fecha, 'larga')}</span>
+              <span class="punto" aria-hidden="true">·</span>
+              <span>${n.lectura} min de lectura</span>
+            </div>
+
+            ${n.foto ? '<figure class="nota-portada">' + foto(n.foto, 'nota-portada-img') + '</figure>' : ''}
+
+            <div class="nota-texto">
+              ${(n.cuerpo || []).map(bloqueDeNota).join('')}
+            </div>
+
+            ${(n.fuentes || []).length ? `
+              <div class="nota-fuentes">
+                <div class="etiqueta">De dónde sale lo que dice esta nota</div>
+                <ul>${n.fuentes.map(function (f) { return '<li>' + U.esc(f) + '</li>'; }).join('')}</ul>
+              </div>` : ''}
+
+            ${firmaDeNota(n)}
+          </article>
+
+          ${otrasNotas(n)}
+
+          <section class="bloque" style="padding-top:0">
+            <div class="fila envuelve gap-1">
+              <button type="button" class="btn" data-accion="app:ir"
+                      ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+                ${U.icono('flecha-izq', 16)} Todas las notas
+              </button>
+              <button type="button" class="btn btn-primario" data-accion="pub:acceder">
+                ${U.icono('candado', 16)} Entrar al portal
+              </button>
+            </div>
+          </section>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
   function bloqueAdmisiones() {
     var e = DB.escuela;
     var b = becas();
@@ -696,6 +991,7 @@ const VistaPublica = (function () {
           ${bloqueClaustro()}
           ${bloqueAlianzas()}
           ${bloqueAfter()}
+          ${bloqueNotas()}
           ${bloqueAdmisiones()}
         </div>
         ${pieSitio()}
@@ -1051,9 +1347,26 @@ const VistaPublica = (function () {
   return {
     titulo: 'The Livingstone',
 
+    /* El título de la pestaña cambia con la ruta: cada nota tiene el suyo. */
+    tituloDe: function (ctx) {
+      var c = ctx || {};
+      if (c.seccion === 'notas') return 'Notas para padres';
+      if (c.seccion === 'nota') {
+        var n = nota((c.params && c.params.id) || '');
+        return n ? n.titulo : 'Notas para padres';
+      }
+      if (c.seccion === 'profesor') {
+        var pr = Q.profesor((c.params && c.params.id) || '');
+        return pr && pr.perfilPublico ? pr.nombre : 'Claustro docente';
+      }
+      return '';
+    },
+
     render: function (ctx) {
       var c = ctx || {};
       if (c.seccion === 'profesor') return perfil(c);
+      if (c.seccion === 'notas') return paginaNotas();
+      if (c.seccion === 'nota') return paginaNota(c);
       return portada();
     },
 
@@ -1063,6 +1376,13 @@ const VistaPublica = (function () {
         var id = args && args.id ? args.id : '';
         if (!id) { U.toast('Esa materia todavía no tiene profesor asignado.', 'aviso'); return; }
         App.ir('#/publico/profesor?id=' + encodeURIComponent(id));
+      },
+
+      /* Abre una nota para padres. */
+      'pub:nota': function (args) {
+        var id = args && args.id ? args.id : '';
+        if (!id) return;
+        App.ir('#/publico/nota?id=' + encodeURIComponent(id));
       },
 
       /* Salta con scroll suave a un bloque de la portada; si no estamos ahí, vuelve primero. */

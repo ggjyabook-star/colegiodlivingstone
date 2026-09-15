@@ -18,6 +18,8 @@ se concatenan **en orden numérico** dentro de un único `<script>`. Por lo tant
 | `src/05-icono.html` | icono de la pestaña (escudo en base64) | ya existe |
 | `src/10-estilos.css` | CSS (tokens + escudo embebido + componentes) | ya existe |
 | `src/20-datos.js` | `const SEMILLA` | ya existe |
+| `src/25-fotos.js` | `const FOTOS` (fotografías del colegio, archivos en `fotos/`) | ya existe |
+| `src/26-notas.js` | `const NOTAS` (notas para padres del sitio público) | ya existe |
 | `src/30-store.js` | `var DB`, `const HOY`, `const Store`, `const Sesion`, `const Q`, `const M` | agente |
 | `src/40-ui.js` | `const U`, `const ICONOS` | agente |
 | `src/50-publico.js` | `const VistaPublica` | agente |

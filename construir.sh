@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-FUENTES="src/25-fotos.js src/30-store.js src/40-ui.js src/50-publico.js src/60-alumno.js src/70-profesor.js src/80-direccion.js src/90-app.js"
+FUENTES="src/25-fotos.js src/26-notas.js src/30-store.js src/40-ui.js src/50-publico.js src/60-alumno.js src/70-profesor.js src/80-direccion.js src/90-app.js"
 
 FUENTE_TITULO='<title>The Livingstone</title>'
 FUENTE_FONTS='<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">'

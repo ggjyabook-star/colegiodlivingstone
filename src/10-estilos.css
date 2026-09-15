@@ -1094,3 +1094,168 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
   .nivel-cuerpo { padding: .95rem; }
   .after-cuerpo { padding: .95rem; }
 }
+
+/* ============================================================================
+   29. Notas para padres: tarjetas, índice y hoja de lectura
+   ========================================================================== */
+
+/* --- tarjetas ------------------------------------------------------------ */
+/* Dos columnas fijas, no auto-fit: con cinco notas (una ancha y cuatro
+   abajo) siempre cierran los renglones y nunca queda un hueco blanco. */
+.notas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+@media (max-width: 720px) { .notas { grid-template-columns: minmax(0, 1fr); } }
+
+.nota-item {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
+  padding: 0; text-align: left; font: inherit; color: inherit; width: 100%; cursor: pointer;
+  transition: border-color .14s ease, transform .14s ease, box-shadow .14s ease;
+}
+.nota-item:hover { transform: translateY(-2px); box-shadow: var(--sombra-2); border-color: var(--linea-fuerte); }
+.nota-item:hover .nota-tit { color: var(--marca-ink); }
+
+.nota-foto { width: 100%; height: 178px; object-fit: cover; display: block; }
+.nota-cuerpo { display: flex; flex-direction: column; gap: .5rem; padding: 1.05rem 1.15rem 1.15rem; flex: 1 1 auto; }
+
+.nota-tema {
+  display: inline-flex; align-items: center; gap: .35rem; align-self: flex-start;
+  font-size: .71rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .5rem; border-radius: var(--r-sm);
+  background: var(--acento-suave); color: var(--acento);
+}
+.nota-tema svg { flex: none; }
+
+.nota-tit {
+  font-family: var(--f-display); font-size: 1.24rem; font-weight: 700; line-height: 1.17;
+  margin: 0; transition: color .14s ease;
+}
+.nota-gancho { font-size: .855rem; color: var(--tinta-2); margin: 0; }
+
+.nota-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .35rem;
+  margin-top: auto; padding-top: .7rem; border-top: 1px solid var(--linea);
+  font-size: .775rem; color: var(--tinta-3);
+}
+.nota-meta .punto { opacity: .6; }
+.nota-meta.grande { font-size: .85rem; border-top: 0; padding-top: 0; margin: 0 0 1.4rem; }
+
+/* La primera nota ocupa el ancho completo y se acuesta: foto a un lado. */
+@media (min-width: 900px) {
+  .notas .nota-item.destacada { grid-column: 1 / -1; flex-direction: row; align-items: stretch; }
+  .notas .nota-item.destacada .nota-foto { width: 42%; height: auto; min-height: 210px; }
+  .notas .nota-item.destacada .nota-cuerpo { padding: 1.5rem 1.7rem; justify-content: center; gap: .65rem; }
+  .notas .nota-item.destacada .nota-tit { font-size: 1.7rem; }
+  .notas .nota-item.destacada .nota-gancho { font-size: .94rem; max-width: 56ch; }
+  /* Sin foto que igualar a lo alto, la firma va pegada al texto y no
+     empujada hasta abajo: si no, la tarjeta ancha se ve hueca. */
+  .notas .nota-item.destacada .nota-meta { margin-top: .35rem; }
+  /* Al pie de una nota van dos sugerencias y ninguna manda sobre la otra. */
+  .notas-pie .nota-item.destacada { grid-column: auto; flex-direction: column; }
+  .notas-pie .nota-item.destacada .nota-foto { width: 100%; height: 178px; min-height: 0; }
+  .notas-pie .nota-item.destacada .nota-cuerpo { padding: 1.05rem 1.15rem 1.15rem; gap: .5rem; }
+  .notas-pie .nota-item.destacada .nota-tit { font-size: 1.24rem; }
+  .notas-pie .nota-item.destacada .nota-gancho { font-size: .855rem; }
+  .notas-pie .nota-item.destacada .nota-meta { margin-top: auto; }
+}
+
+/* --- hoja de lectura ----------------------------------------------------- */
+.nota-hoja { max-width: 45rem; margin: 2.2rem auto 0; }
+.nota-hoja > .nota-tema { margin-bottom: .9rem; }
+.nota-hoja h1 {
+  font-family: var(--f-display); font-size: clamp(1.9rem, 4.4vw, 2.75rem);
+  font-weight: 700; line-height: 1.11; letter-spacing: -.01em; margin: 0 0 .8rem;
+}
+.nota-hoja .nota-entrada {
+  font-size: 1.1rem; line-height: 1.55; color: var(--tinta-2);
+  margin: 0 0 1.2rem; max-width: 42ch;
+}
+
+.nota-portada { margin: 0 0 2rem; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--linea); }
+.nota-portada-img { width: 100%; height: clamp(200px, 30vw, 330px); object-fit: cover; display: block; }
+
+.nota-texto { font-size: 1.035rem; line-height: 1.72; }
+.nota-texto p { margin: 0 0 1.15rem; }
+.nota-texto h2 {
+  font-family: var(--f-display); font-size: 1.45rem; font-weight: 700; line-height: 1.22;
+  margin: 2.2rem 0 .85rem;
+}
+.nota-texto > :first-child { margin-top: 0; }
+.nota-texto strong { font-weight: 600; color: var(--tinta); }
+
+/* Las viñetas se dibujan a mano: así el texto largo no se desalinea. */
+.nota-lista { list-style: none; margin: 0 0 1.3rem; padding: 0; display: grid; gap: .7rem; }
+.nota-lista li { position: relative; padding-left: 1.4rem; }
+.nota-lista li::before {
+  content: ""; position: absolute; left: .3rem; top: .72em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--acento);
+}
+
+.nota-pasos { list-style: none; margin: 0 0 1.4rem; padding: 0; counter-reset: paso; display: grid; gap: .9rem; }
+.nota-pasos li {
+  counter-increment: paso; position: relative; padding-left: 2.6rem;
+}
+.nota-pasos li::before {
+  content: counter(paso); position: absolute; left: 0; top: .18em;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--marca); color: var(--marca-contraste);
+  font-family: var(--f-mono); font-size: .8rem; font-weight: 600;
+}
+.nota-pasos .t { display: block; font-weight: 600; line-height: 1.35; }
+.nota-pasos .d { display: block; color: var(--tinta-2); font-size: .96rem; }
+
+.nota-dato {
+  display: flex; gap: .75rem; align-items: flex-start;
+  margin: 0 0 1.4rem; padding: 1rem 1.15rem;
+  background: var(--acento-suave); border-left: 3px solid var(--acento-vivo);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  font-size: .96rem; line-height: 1.6; color: var(--tinta);
+}
+.nota-dato .ico { flex: none; display: flex; color: var(--acento); margin-top: .15rem; }
+
+.nota-cita { margin: 1.6rem 0; font-size: 1.15rem; }
+.nota-tabla { margin: 0 0 1.5rem; }
+.nota-tabla table { font-size: .93rem; }
+
+.nota-fuentes {
+  margin-top: 2.4rem; padding: 1.1rem 1.25rem;
+  background: var(--superficie-2); border: 1px solid var(--linea); border-radius: var(--r-lg);
+}
+.nota-fuentes ul { list-style: none; margin: .55rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.nota-fuentes li {
+  position: relative; padding-left: 1.1rem;
+  font-size: .82rem; line-height: 1.5; color: var(--tinta-2);
+}
+.nota-fuentes li::before {
+  content: ""; position: absolute; left: 0; top: .62em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--tinta-3);
+}
+
+.nota-firma {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .9rem;
+  margin-top: 1.3rem; padding: 1.1rem 1.25rem;
+  background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
+}
+.nota-firma .nom { font-weight: 600; font-size: .98rem; line-height: 1.3; }
+
+/* --- teléfono ------------------------------------------------------------ */
+@media (max-width: 760px) {
+  .notas { gap: .8rem; }
+  .nota-foto { height: 150px; }
+  .nota-cuerpo { padding: .95rem; gap: .45rem; }
+  .nota-tit { font-size: 1.14rem; }
+
+  /* En la portada, tres tarjetas seguidas ya son bastante: la tercera se
+     guarda y se llega a ella por el botón que abre el índice completo. */
+  .bloque#notas .notas .nota-item:nth-child(n+3) { display: none; }
+
+  .nota-hoja { margin-top: 1.6rem; }
+  .nota-hoja .nota-entrada { font-size: 1.02rem; }
+  .nota-portada { margin-bottom: 1.5rem; }
+  .nota-texto { font-size: 1rem; line-height: 1.68; }
+  .nota-texto h2 { font-size: 1.28rem; margin: 1.8rem 0 .7rem; }
+  .nota-dato { padding: .85rem 1rem; font-size: .92rem; }
+  .nota-pasos li { padding-left: 2.35rem; }
+  .nota-fuentes, .nota-firma { padding: .95rem 1rem; }
+  .nota-firma { gap: .7rem; }
+}

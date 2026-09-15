@@ -1098,6 +1098,171 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
   .nivel-cuerpo { padding: .95rem; }
   .after-cuerpo { padding: .95rem; }
 }
+
+/* ============================================================================
+   29. Notas para padres: tarjetas, índice y hoja de lectura
+   ========================================================================== */
+
+/* --- tarjetas ------------------------------------------------------------ */
+/* Dos columnas fijas, no auto-fit: con cinco notas (una ancha y cuatro
+   abajo) siempre cierran los renglones y nunca queda un hueco blanco. */
+.notas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+@media (max-width: 720px) { .notas { grid-template-columns: minmax(0, 1fr); } }
+
+.nota-item {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
+  padding: 0; text-align: left; font: inherit; color: inherit; width: 100%; cursor: pointer;
+  transition: border-color .14s ease, transform .14s ease, box-shadow .14s ease;
+}
+.nota-item:hover { transform: translateY(-2px); box-shadow: var(--sombra-2); border-color: var(--linea-fuerte); }
+.nota-item:hover .nota-tit { color: var(--marca-ink); }
+
+.nota-foto { width: 100%; height: 178px; object-fit: cover; display: block; }
+.nota-cuerpo { display: flex; flex-direction: column; gap: .5rem; padding: 1.05rem 1.15rem 1.15rem; flex: 1 1 auto; }
+
+.nota-tema {
+  display: inline-flex; align-items: center; gap: .35rem; align-self: flex-start;
+  font-size: .71rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .5rem; border-radius: var(--r-sm);
+  background: var(--acento-suave); color: var(--acento);
+}
+.nota-tema svg { flex: none; }
+
+.nota-tit {
+  font-family: var(--f-display); font-size: 1.24rem; font-weight: 700; line-height: 1.17;
+  margin: 0; transition: color .14s ease;
+}
+.nota-gancho { font-size: .855rem; color: var(--tinta-2); margin: 0; }
+
+.nota-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .35rem;
+  margin-top: auto; padding-top: .7rem; border-top: 1px solid var(--linea);
+  font-size: .775rem; color: var(--tinta-3);
+}
+.nota-meta .punto { opacity: .6; }
+.nota-meta.grande { font-size: .85rem; border-top: 0; padding-top: 0; margin: 0 0 1.4rem; }
+
+/* La primera nota ocupa el ancho completo y se acuesta: foto a un lado. */
+@media (min-width: 900px) {
+  .notas .nota-item.destacada { grid-column: 1 / -1; flex-direction: row; align-items: stretch; }
+  .notas .nota-item.destacada .nota-foto { width: 42%; height: auto; min-height: 210px; }
+  .notas .nota-item.destacada .nota-cuerpo { padding: 1.5rem 1.7rem; justify-content: center; gap: .65rem; }
+  .notas .nota-item.destacada .nota-tit { font-size: 1.7rem; }
+  .notas .nota-item.destacada .nota-gancho { font-size: .94rem; max-width: 56ch; }
+  /* Sin foto que igualar a lo alto, la firma va pegada al texto y no
+     empujada hasta abajo: si no, la tarjeta ancha se ve hueca. */
+  .notas .nota-item.destacada .nota-meta { margin-top: .35rem; }
+  /* Al pie de una nota van dos sugerencias y ninguna manda sobre la otra. */
+  .notas-pie .nota-item.destacada { grid-column: auto; flex-direction: column; }
+  .notas-pie .nota-item.destacada .nota-foto { width: 100%; height: 178px; min-height: 0; }
+  .notas-pie .nota-item.destacada .nota-cuerpo { padding: 1.05rem 1.15rem 1.15rem; gap: .5rem; }
+  .notas-pie .nota-item.destacada .nota-tit { font-size: 1.24rem; }
+  .notas-pie .nota-item.destacada .nota-gancho { font-size: .855rem; }
+  .notas-pie .nota-item.destacada .nota-meta { margin-top: auto; }
+}
+
+/* --- hoja de lectura ----------------------------------------------------- */
+.nota-hoja { max-width: 45rem; margin: 2.2rem auto 0; }
+.nota-hoja > .nota-tema { margin-bottom: .9rem; }
+.nota-hoja h1 {
+  font-family: var(--f-display); font-size: clamp(1.9rem, 4.4vw, 2.75rem);
+  font-weight: 700; line-height: 1.11; letter-spacing: -.01em; margin: 0 0 .8rem;
+}
+.nota-hoja .nota-entrada {
+  font-size: 1.1rem; line-height: 1.55; color: var(--tinta-2);
+  margin: 0 0 1.2rem; max-width: 42ch;
+}
+
+.nota-portada { margin: 0 0 2rem; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--linea); }
+.nota-portada-img { width: 100%; height: clamp(200px, 30vw, 330px); object-fit: cover; display: block; }
+
+.nota-texto { font-size: 1.035rem; line-height: 1.72; }
+.nota-texto p { margin: 0 0 1.15rem; }
+.nota-texto h2 {
+  font-family: var(--f-display); font-size: 1.45rem; font-weight: 700; line-height: 1.22;
+  margin: 2.2rem 0 .85rem;
+}
+.nota-texto > :first-child { margin-top: 0; }
+.nota-texto strong { font-weight: 600; color: var(--tinta); }
+
+/* Las viñetas se dibujan a mano: así el texto largo no se desalinea. */
+.nota-lista { list-style: none; margin: 0 0 1.3rem; padding: 0; display: grid; gap: .7rem; }
+.nota-lista li { position: relative; padding-left: 1.4rem; }
+.nota-lista li::before {
+  content: ""; position: absolute; left: .3rem; top: .72em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--acento);
+}
+
+.nota-pasos { list-style: none; margin: 0 0 1.4rem; padding: 0; counter-reset: paso; display: grid; gap: .9rem; }
+.nota-pasos li {
+  counter-increment: paso; position: relative; padding-left: 2.6rem;
+}
+.nota-pasos li::before {
+  content: counter(paso); position: absolute; left: 0; top: .18em;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--marca); color: var(--marca-contraste);
+  font-family: var(--f-mono); font-size: .8rem; font-weight: 600;
+}
+.nota-pasos .t { display: block; font-weight: 600; line-height: 1.35; }
+.nota-pasos .d { display: block; color: var(--tinta-2); font-size: .96rem; }
+
+.nota-dato {
+  display: flex; gap: .75rem; align-items: flex-start;
+  margin: 0 0 1.4rem; padding: 1rem 1.15rem;
+  background: var(--acento-suave); border-left: 3px solid var(--acento-vivo);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  font-size: .96rem; line-height: 1.6; color: var(--tinta);
+}
+.nota-dato .ico { flex: none; display: flex; color: var(--acento); margin-top: .15rem; }
+
+.nota-cita { margin: 1.6rem 0; font-size: 1.15rem; }
+.nota-tabla { margin: 0 0 1.5rem; }
+.nota-tabla table { font-size: .93rem; }
+
+.nota-fuentes {
+  margin-top: 2.4rem; padding: 1.1rem 1.25rem;
+  background: var(--superficie-2); border: 1px solid var(--linea); border-radius: var(--r-lg);
+}
+.nota-fuentes ul { list-style: none; margin: .55rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.nota-fuentes li {
+  position: relative; padding-left: 1.1rem;
+  font-size: .82rem; line-height: 1.5; color: var(--tinta-2);
+}
+.nota-fuentes li::before {
+  content: ""; position: absolute; left: 0; top: .62em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--tinta-3);
+}
+
+.nota-firma {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .9rem;
+  margin-top: 1.3rem; padding: 1.1rem 1.25rem;
+  background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
+}
+.nota-firma .nom { font-weight: 600; font-size: .98rem; line-height: 1.3; }
+
+/* --- teléfono ------------------------------------------------------------ */
+@media (max-width: 760px) {
+  .notas { gap: .8rem; }
+  .nota-foto { height: 150px; }
+  .nota-cuerpo { padding: .95rem; gap: .45rem; }
+  .nota-tit { font-size: 1.14rem; }
+
+  /* En la portada, tres tarjetas seguidas ya son bastante: la tercera se
+     guarda y se llega a ella por el botón que abre el índice completo. */
+  .bloque#notas .notas .nota-item:nth-child(n+3) { display: none; }
+
+  .nota-hoja { margin-top: 1.6rem; }
+  .nota-hoja .nota-entrada { font-size: 1.02rem; }
+  .nota-portada { margin-bottom: 1.5rem; }
+  .nota-texto { font-size: 1rem; line-height: 1.68; }
+  .nota-texto h2 { font-size: 1.28rem; margin: 1.8rem 0 .7rem; }
+  .nota-dato { padding: .85rem 1rem; font-size: .92rem; }
+  .nota-pasos li { padding-left: 2.35rem; }
+  .nota-fuentes, .nota-firma { padding: .95rem 1rem; }
+  .nota-firma { gap: .7rem; }
+}
 </style>
 <div id="raiz"></div>
 <div class="toast-zona" id="toasts" aria-live="polite" aria-atomic="false"></div>
@@ -2641,6 +2806,450 @@ const FOTOS = {
     alt: 'Alumnos del colegio durante el viaje académico al Reino Unido'
   }
 };
+
+/* ===== src/26-notas.js ===== */
+/* ============================================================================
+   26-notas.js — Notas para padres de familia que publica el colegio.
+   Declara: const NOTAS
+   Es el contenido editorial del sitio: artículos de orientación para las
+   familias, firmados por alguien del claustro o por la dirección.
+
+   Cada nota es contenido, no interfaz: el cuerpo se arma con bloques y la
+   vista pública decide cómo se ven. Bloques disponibles:
+
+     { t:'p',     x:'párrafo' }
+     { t:'h',     x:'subtítulo' }
+     { t:'lista', x:['punto', 'punto'] }
+     { t:'pasos', x:[{ t:'título del paso', x:'texto' }] }
+     { t:'dato',  x:'apunte que va en recuadro' }
+     { t:'cita',  x:'frase', de:'quién la dijo' }
+     { t:'tabla', cab:['col','col'], filas:[['a','b']] }
+
+   En cualquier texto, **lo que va entre asteriscos dobles** sale en negritas.
+   Nada más: el texto se escapa antes de dibujarse.
+
+   `autorId` apunta a un profesor (pr-XX) o a la dirección (dir-01), para que
+   la firma lleve al perfil público de quien escribe. `foto` es una clave de
+   FOTOS; si falta, la nota se dibuja igual sin imagen.
+   ========================================================================== */
+
+const NOTAS = [
+
+  /* ------------------------------------------------------------------------ */
+  {
+    id: 'habitos-en-casa',
+    tema: 'Aprendizaje',
+    icono: 'casa',
+    foto: 'niv-pre',
+    fecha: '2025-11-04',
+    lectura: 7,
+    autorId: 'pr-05',
+    titulo: 'Cinco cosas que sí mueven el aprendizaje en casa',
+    gancho: 'No son las apps ni las clases particulares. Lo que más cambia el rendimiento de un ' +
+            'niño cabe en cinco hábitos, y cuatro de ellos son gratis.',
+    cuerpo: [
+      { t: 'p', x: 'Cada año, en las juntas de padres, alguien hace la misma pregunta: «¿qué le ' +
+                   'compro, qué le pongo, a dónde lo llevo para que le vaya mejor?». La respuesta ' +
+                   'honesta decepciona un poco, porque lo que mejor funciona no se compra. Va lo ' +
+                   'que la investigación educativa sostiene con más firmeza, en orden de peso.' },
+
+      { t: 'h', x: '1. Dormir. En serio, dormir' },
+      { t: 'p', x: 'El sueño no es tiempo perdido: es cuando el cerebro consolida lo que se ' +
+                   'estudió durante el día. Un adolescente que duerme seis horas estudia con una ' +
+                   'desventaja que ningún método compensa.' },
+      { t: 'p', x: 'Las recomendaciones pediátricas son claras: **de 6 a 12 años, entre 9 y 12 ' +
+                   'horas**; **de 13 a 18 años, entre 8 y 10**. Y más importante que el total es ' +
+                   'la regularidad: la misma hora de dormir entre semana sostiene mejor el ' +
+                   'rendimiento que dormir poco de lunes a viernes y recuperar el sábado.' },
+      { t: 'dato', x: 'Prueba concreta: el celular se queda fuera del cuarto, cargando en la sala. ' +
+                      'Es la medida que más rápido devuelve horas de sueño a un adolescente.' },
+
+      { t: 'h', x: '2. Preguntarse, no releer' },
+      { t: 'p', x: 'Releer el cuaderno **se siente** productivo: todo suena conocido. Esa ' +
+                   'sensación es precisamente la trampa. Cerrar el libro e intentar recordar ' +
+                   'produce un aprendizaje bastante más duradero que volver a leer, aunque en el ' +
+                   'momento se sienta más difícil e incómodo.' },
+      { t: 'p', x: 'En casa se aplica sin material: pídale a su hijo que le cuente de qué se ' +
+                   'trató la clase, sin abrir el cuaderno. Lo que no pueda contar es exactamente ' +
+                   'lo que le falta estudiar. Ese hueco, encontrado un martes, no aparece el día ' +
+                   'del examen.' },
+
+      { t: 'h', x: '3. Repartir el estudio en el tiempo' },
+      { t: 'p', x: 'Cuatro sesiones de 25 minutos en cuatro días distintos rinden más que una de ' +
+                   'cien minutos la noche anterior, aun siendo el mismo tiempo total. El examen ' +
+                   'mide lo que sobrevivió, y lo que hace que algo sobreviva es haberlo visitado ' +
+                   'varias veces con descansos de por medio.' },
+      { t: 'p', x: 'Esto cambia la conversación de casa: en vez de «ponte a estudiar», sirve más ' +
+                   'un «¿qué tienes el jueves?» el lunes.' },
+
+      { t: 'h', x: '4. Leer en voz alta más tiempo del que parece necesario' },
+      { t: 'p', x: 'Cuando un niño ya lee solo, muchas familias dejan de leerle. Vale la pena ' +
+                   'seguir. Leerle en voz alta lo expone a un vocabulario y a estructuras de ' +
+                   'frase más complejas de las que alcanza por sí mismo, y el vocabulario es el ' +
+                   'mejor predictor de la comprensión lectora más adelante.' },
+      { t: 'p', x: 'A partir de secundaria el equivalente es otro: leer lo mismo que él. Una ' +
+                   'novela compartida da tema de conversación durante semanas.' },
+
+      { t: 'h', x: '5. Preguntar de la escuela, pero bien' },
+      { t: 'p', x: '«¿Cómo te fue?» tiene una sola respuesta posible: «bien». Las preguntas ' +
+                   'concretas abren conversaciones de verdad.' },
+      { t: 'lista', x: [
+        '¿Qué fue lo más difícil de hoy?',
+        '¿A quién ayudaste o quién te ayudó?',
+        '¿Qué le preguntaste al profe?',
+        '¿Qué hiciste hoy que ayer no sabías hacer?'
+      ] },
+      { t: 'p', x: 'Y al comentar los resultados, hable del **proceso**, no de la etiqueta. ' +
+                   '«Se nota que le dedicaste tiempo» y «esa forma de organizarte funcionó» ' +
+                   'dejan al niño con algo que puede repetir. «Eres muy inteligente» lo deja ' +
+                   'con algo que puede perder.' },
+
+      { t: 'h', x: 'Y una que no ayuda tanto como parece' },
+      { t: 'p', x: 'Sentarse a hacer la tarea **con** él está bien; hacérsela, no. La tarea es el ' +
+                   'único termómetro que tiene el profesor para saber qué entendió el grupo. Una ' +
+                   'tarea resuelta por el papá informa mal, y el costo se cobra en el examen.' },
+      { t: 'p', x: 'Si la tarea está tomando muchísimo más tiempo del que debería, eso no se ' +
+                   'arregla resolviéndola: se avisa al profesor titular. Es información valiosa y ' +
+                   'en el portal se puede mandar en dos minutos.' }
+    ],
+    fuentes: [
+      'American Academy of Sleep Medicine y American Academy of Pediatrics — recomendaciones de horas de sueño por edad.',
+      'Roediger y Karpicke, «Test-Enhanced Learning», Psychological Science (2006).',
+      'Cepeda, Pashler, Vul, Wixted y Rohrer — metaanálisis sobre práctica distribuida, Psychological Bulletin (2006).'
+    ]
+  },
+
+  /* ------------------------------------------------------------------------ */
+  {
+    id: 'hablar-de-la-colegiatura',
+    tema: 'Familia y dinero',
+    icono: 'dinero',
+    foto: 'niv-bac',
+    fecha: '2025-10-21',
+    lectura: 8,
+    autorId: 'pr-14',
+    titulo: 'Hablar de la colegiatura en casa: por qué conviene y cómo hacerlo',
+    gancho: 'La mayoría de las familias trata el costo de la escuela como un asunto de adultos. ' +
+            'Hay buenas razones para abrirlo — y una forma de hacerlo que sale mal.',
+    cuerpo: [
+      { t: 'p', x: 'Nadie quiere que un hijo se sienta una carga. Por eso, en muchas casas, la ' +
+                   'colegiatura es un tema del que se habla en voz baja o no se habla. Es ' +
+                   'comprensible, pero hay una diferencia grande entre **cargarle la preocupación** ' +
+                   'y **que sepa lo que cuesta su educación**. Lo primero sobra; lo segundo enseña.' },
+
+      { t: 'h', x: 'Por qué no es prematuro' },
+      { t: 'p', x: 'Buena parte de los hábitos básicos que gobiernan la relación de un adulto con ' +
+                   'el dinero se forman mucho antes de que ese adulto tenga dinero propio: ' +
+                   'investigación de la Universidad de Cambridge ubica su formación **alrededor de ' +
+                   'los siete años**. Esperar a la universidad para hablar de finanzas es llegar ' +
+                   'una década tarde.' },
+      { t: 'p', x: 'La OCDE mide competencia financiera en jóvenes de quince años dentro de PISA. ' +
+                   'Un hallazgo se repite prueba tras prueba: los estudiantes que **conversan de ' +
+                   'dinero con sus padres** obtienen mejores resultados que quienes no lo hacen. ' +
+                   'No es la mesada lo que marca la diferencia, es la conversación.' },
+
+      { t: 'h', x: 'Cómo se habla, según la edad' },
+      { t: 'pasos', x: [
+        { t: 'De 5 a 8 años', x: 'La escuela cuesta dinero, como la casa y la comida, y la ' +
+                                 'familia decidió pagarla. Con eso basta. Números chiquitos y ' +
+                                 'comparaciones concretas: «esto que pagamos al mes alcanza para ' +
+                                 'tantas semanas de despensa».' },
+        { t: 'De 9 a 12 años', x: 'Ya se puede enseñar la cifra real y qué compra: los maestros, ' +
+                                  'el laboratorio, la biblioteca, los materiales. Y se le puede ' +
+                                  'dar una decisión pequeña pero real —una actividad de la tarde, ' +
+                                  'una salida— donde vea que elegir una cosa significa no elegir ' +
+                                  'otra.' },
+        { t: 'De 13 a 18 años', x: 'El número completo del año: inscripción, colegiatura, ' +
+                                   'uniformes, materiales, salidas. Que él arme la cuenta con ' +
+                                   'usted, no que se la entreguen hecha. A esta edad la ' +
+                                   'conversación se conecta con la que viene: carrera, ' +
+                                   'universidad, becas, y qué parte va a poner él.' }
+      ] },
+
+      { t: 'h', x: 'Lo que no hay que hacer' },
+      { t: 'p', x: 'Usar la colegiatura como reproche. «Con lo que pagamos y mira tus ' +
+                   'calificaciones» convierte la educación en una deuda, y una deuda no motiva: ' +
+                   'hace que el hijo **esconda** la calificación mala en vez de pedir ayuda. Es ' +
+                   'exactamente lo contrario de lo que se buscaba.' },
+      { t: 'cita', x: 'Que sepa lo que cuesta, no lo que debe.', de: 'Regla práctica para esta conversación' },
+
+      { t: 'h', x: 'Dos cosas prácticas que conviene saber' },
+      { t: 'p', x: 'La primera: en México las colegiaturas de escuelas con validez oficial son ' +
+                   '**deducibles** en la declaración anual del ISR, dentro de un tope anual por ' +
+                   'alumno y por nivel.' },
+      { t: 'tabla', cab: ['Nivel', 'Tope anual deducible por alumno'], filas: [
+        ['Preescolar', '$14,200'],
+        ['Primaria', '$12,900'],
+        ['Secundaria', '$19,900'],
+        ['Profesional técnico', '$17,100'],
+        ['Bachillerato o equivalente', '$24,500']
+      ] },
+      { t: 'p', x: 'Para que aplique, el pago debe hacerse con **cheque nominativo, transferencia ' +
+                   'o tarjeta** —nunca en efectivo—, la factura debe llevar el **CURP del alumno** ' +
+                   'y la escuela debe tener autorización o reconocimiento de validez oficial. La ' +
+                   'inscripción, los uniformes y los materiales no entran. Confirme los montos del ' +
+                   'ejercicio en curso con el SAT o con su contador antes de declarar.' },
+      { t: 'p', x: 'La segunda: casi todos los colegios tienen becas, y casi todas se pierden por ' +
+                   'no preguntar a tiempo. Los criterios y las fechas de solicitud son públicos; ' +
+                   'pedirlos no compromete a nada.' },
+
+      { t: 'dato', x: 'En el portal del colegio, la sección de **Pagos** muestra el estado de ' +
+                      'cuenta al día: lo pagado, lo que sigue y la referencia de cada movimiento. ' +
+                      'Es un buen punto de partida para esta conversación, porque el número deja ' +
+                      'de ser una abstracción.' }
+    ],
+    fuentes: [
+      'Whitebread y Bingham, «Habit Formation and Learning in Young Children», University of Cambridge para el Money Advice Service (2013).',
+      'OCDE — PISA, evaluación de competencia financiera en estudiantes de 15 años.',
+      'SAT — estímulo fiscal por pagos de colegiaturas, Decreto del 26 de diciembre de 2013 y reglas vigentes.'
+    ]
+  },
+
+  /* ------------------------------------------------------------------------ */
+  {
+    id: 'todos-aprenden-distinto',
+    tema: 'Aprendizaje',
+    icono: 'identidad',
+    foto: 'niv-pri',
+    fecha: '2025-10-07',
+    lectura: 7,
+    autorId: 'pr-03',
+    titulo: 'Todos los niños aprenden distinto, pero no como suele decirse',
+    gancho: 'Lo de «mi hijo es visual» es de las ideas más repetidas en educación, y de las peor ' +
+            'sostenidas. Las diferencias entre niños son reales; están en otro lado.',
+    cuerpo: [
+      { t: 'p', x: 'En algún momento casi todos los padres escuchan —o dicen— alguna versión de ' +
+                   'esto: «es que él es visual», «ella aprende haciendo», «a mi hijo hay que ' +
+                   'explicarle de oído». La idea de fondo es que cada niño tiene un canal ' +
+                   'preferido y que enseñarle por ese canal lo hace aprender más. Suena razonable ' +
+                   'y es cómoda. El problema es que se ha puesto a prueba y no se sostiene.' },
+
+      { t: 'h', x: 'Qué se probó exactamente' },
+      { t: 'p', x: 'Para que la teoría de los estilos de aprendizaje sea útil, tiene que cumplirse ' +
+                   'una cosa concreta: que a un alumno «visual» le vaya mejor con material visual ' +
+                   'que con material auditivo, y al «auditivo» al revés. Una revisión ya clásica ' +
+                   'de Pashler y colegas (2008) buscó estudios con ese diseño y encontró muy ' +
+                   'pocos; los que sí lo tenían **no hallaron ese efecto**. Revisiones posteriores ' +
+                   'llegaron al mismo lugar.' },
+      { t: 'p', x: 'Ojo con lo que esto no dice. No dice que los niños sean iguales, ni que las ' +
+                   'preferencias no existan: a un niño puede gustarle más ver un video que ' +
+                   'escuchar una explicación, y eso es verdad. Lo que no aparece es el beneficio ' +
+                   'de **casar** la enseñanza con esa preferencia.' },
+
+      { t: 'h', x: 'Por qué la etiqueta cuesta cara' },
+      { t: 'p', x: 'Un niño al que se le repite que «no es de números» termina creyéndolo, y ' +
+                   'quien cree eso deja de intentar. La etiqueta se vuelve un techo. En clase ' +
+                   'vemos la versión adolescente todo el tiempo: «yo soy de letras» dicho a los ' +
+                   'catorce años, para no volver a abrir un libro de matemáticas.' },
+
+      { t: 'h', x: 'Dónde sí están las diferencias' },
+      { t: 'lista', x: [
+        '**Conocimiento previo.** Es el predictor más fuerte de lo que un niño va a aprender en la clase de mañana. Dos alumnos en la misma banca pueden estar partiendo de lugares muy distintos, y eso no se ve en la boleta del ciclo pasado.',
+        '**Ritmo.** Hay niños que necesitan más vueltas para lo mismo. Ritmo no es capacidad: confundirlos es el error más común y el más costoso.',
+        '**Vocabulario y lenguaje de casa.** Cuántas palabras escucha y usa un niño fuera de la escuela pesa muchísimo en su comprensión lectora años después.',
+        '**Atención y funciones ejecutivas.** Planear, esperar, sostener una tarea. Maduran a velocidades distintas y el rango normal es amplísimo.',
+        '**Intereses.** Lo que engancha a cada uno. Es la palanca más útil que tiene un maestro, y funciona en cualquier canal.',
+        '**Condiciones específicas.** Dislexia, TDAH, altas capacidades. Son reales, sí requieren ajustes concretos y las diagnostica un profesional, no una intuición de casa ni de escuela.'
+      ] },
+
+      { t: 'h', x: 'Entonces, ¿para qué sirven los videos, los mapas y los experimentos?' },
+      { t: 'p', x: 'Sirven, y mucho. Pero por otra razón. No es que cada niño tenga un canal: es ' +
+                   'que cada **contenido** lo tiene. La geometría necesita imagen. Un poema ' +
+                   'necesita sonido. La química necesita que algo cambie de color enfrente de ' +
+                   'ti. Presentar lo mismo de varias formas ayuda a todo el grupo, no a un ' +
+                   'subgrupo con determinada etiqueta.' },
+      { t: 'dato', x: 'La versión corta para casa: en vez de buscar **el** canal de su hijo, ' +
+                      'busque que tenga varias entradas al mismo tema. Es lo que hacemos en clase ' +
+                      'y funciona para todos.' },
+
+      { t: 'h', x: 'Qué puede hacer usted' },
+      { t: 'pasos', x: [
+        { t: 'Describa con verbos, no con etiquetas', x: 'En lugar de «es kinestésico», diga ' +
+              '«se concentra mejor cuando puede armar algo con las manos». Lo primero cierra; lo ' +
+              'segundo es información útil para el maestro.' },
+        { t: 'Lleve datos concretos a la junta', x: 'Cuánto tarda en la tarea, en qué materia se ' +
+              'traba, a qué hora rinde. Eso cambia una conversación mucho más que una etiqueta.' },
+        { t: 'Pregunte por el punto de partida', x: '«¿Qué le falta de lo anterior para poder con ' +
+              'esto?» es la pregunta que más rápido destraba a un alumno atorado.' },
+        { t: 'Si sospecha algo específico, evalúe', x: 'Si hay indicios de dislexia, TDAH o de ' +
+              'altas capacidades, lo que corresponde es una valoración profesional. Adivinar ' +
+              'retrasa el apoyo real.' }
+      ] },
+      { t: 'p', x: 'En el portal, cada evaluación queda registrada por criterio y no sólo por ' +
+                   'calificación final. Sirve justo para esto: ver **en qué** se atoró, no nada ' +
+                   'más cuánto sacó.' }
+    ],
+    fuentes: [
+      'Pashler, McDaniel, Rohrer y Bjork, «Learning Styles: Concepts and Evidence», Psychological Science in the Public Interest (2008).',
+      'Willingham, Hughes y Dobolyi, «The Scientific Status of Learning Styles Theories», Teaching of Psychology (2015).'
+    ]
+  },
+
+  /* ------------------------------------------------------------------------ */
+  {
+    id: 'sistema-educativo-mexico',
+    tema: 'Para decidir',
+    icono: 'birrete',
+    foto: 'niv-sec',
+    fecha: '2025-09-16',
+    lectura: 9,
+    autorId: 'dir-01',
+    titulo: 'Cómo está organizado el sistema educativo en México',
+    gancho: 'Quince grados obligatorios, cuatro campos formativos y una clave que conviene pedir ' +
+            'antes de firmar una inscripción. Una guía para entender dónde está parado su hijo.',
+    cuerpo: [
+      { t: 'p', x: 'Muchas decisiones escolares se toman con información parcial, no por descuido ' +
+                   'sino porque el sistema se explica poco. Va un mapa breve de cómo está armado ' +
+                   'y qué conviene preguntarle a cualquier colegio —este incluido— antes de ' +
+                   'inscribir a un hijo.' },
+
+      { t: 'h', x: 'Qué es obligatorio' },
+      { t: 'p', x: 'La Constitución establece como obligatorias la **educación básica** ' +
+                   '—preescolar, primaria y secundaria— y, desde la reforma de febrero de 2012, ' +
+                   'también la **media superior**. En total son quince grados: tres de preescolar, ' +
+                   'seis de primaria, tres de secundaria y tres de bachillerato.' },
+      { t: 'tabla', cab: ['Tramo', 'Grados', 'Edad aproximada'], filas: [
+        ['Preescolar', '3', '3 a 5 años'],
+        ['Primaria', '6', '6 a 11 años'],
+        ['Secundaria', '3', '12 a 14 años'],
+        ['Media superior', '3', '15 a 17 años']
+      ] },
+      { t: 'p', x: 'Cada ciclo escolar la SEP publica un calendario oficial, que en los últimos ' +
+                   'años ha rondado entre 185 y 190 días de clase, con las fechas de inicio, fin, ' +
+                   'periodos de evaluación y días de consejo técnico.' },
+
+      { t: 'h', x: 'Quién regula qué' },
+      { t: 'p', x: 'La Secretaría de Educación Pública fija el plan de estudios nacional y las ' +
+                   'autoridades educativas de cada estado operan y supervisan. Toda escuela, ' +
+                   'pública o particular, tiene una **Clave de Centro de Trabajo (CCT)** que la ' +
+                   'identifica ante el sistema. Es un dato público y se puede consultar.' },
+      { t: 'dato', x: 'Para que los estudios de una escuela particular tengan validez oficial, ' +
+                      'educación básica requiere **autorización** de la autoridad educativa, y ' +
+                      'media superior y superior requieren **Reconocimiento de Validez Oficial de ' +
+                      'Estudios (RVOE)**. No es un trámite decorativo: sin eso, los papeles no ' +
+                      'sirven para inscribirse en otra escuela ni para titularse. Pida el número ' +
+                      'y verifíquelo.' },
+
+      { t: 'h', x: 'Qué cambió con el plan vigente' },
+      { t: 'p', x: 'El Plan de Estudio 2022, dentro de lo que se llama Nueva Escuela Mexicana, ' +
+                   'reorganizó la educación básica. En lugar de una lista larga de asignaturas ' +
+                   'sueltas, el trabajo se agrupa en **cuatro campos formativos**:' },
+      { t: 'lista', x: [
+        '**Lenguajes** — español, lenguas indígenas, lenguas extranjeras y lenguajes artísticos.',
+        '**Saberes y pensamiento científico** — matemáticas y ciencias naturales.',
+        '**Ética, naturaleza y sociedades** — historia, geografía, civismo y cuidado del entorno.',
+        '**De lo humano y lo comunitario** — desarrollo personal, salud, actividad física y vida en comunidad.'
+      ] },
+      { t: 'p', x: 'La trayectoria se organiza en **seis fases** en vez de grados aislados: la ' +
+                   'fase 1 corresponde a educación inicial; la 2, a preescolar; la 3, a 1º y 2º ' +
+                   'de primaria; la 4, a 3º y 4º; la 5, a 5º y 6º; y la 6, a secundaria. La idea ' +
+                   'es que dos grados consecutivos se trabajen como un tramo continuo.' },
+      { t: 'p', x: 'Además hay **siete ejes articuladores** que atraviesan todos los campos: ' +
+                   'inclusión, pensamiento crítico, interculturalidad crítica, igualdad de género, ' +
+                   'vida saludable, apropiación de las culturas a través de la lectura y la ' +
+                   'escritura, y artes y experiencias estéticas.' },
+      { t: 'p', x: 'Para las familias el cambio práctico es que la boleta de básica reporta ' +
+                   'avance por campo formativo y por periodo, no una lista de materias con ' +
+                   'promedio. A muchos padres les cuesta leerla al principio, y es completamente ' +
+                   'razonable pedirle al colegio que se las explique.' },
+
+      { t: 'h', x: 'Las rutas de bachillerato' },
+      { t: 'p', x: 'La media superior tiene tres caminos. El **bachillerato general** prepara ' +
+                   'sobre todo para continuar a la universidad. El **bachillerato tecnológico** ' +
+                   'suma una carrera técnica al mismo tiempo, con la que se puede trabajar al ' +
+                   'salir. El **profesional técnico** apunta directamente al empleo, aunque hoy ' +
+                   'casi todas sus modalidades también permiten seguir estudiando. Los tres ' +
+                   'otorgan certificado de media superior.' },
+
+      { t: 'h', x: 'Qué preguntarle a un colegio antes de inscribir' },
+      { t: 'lista', x: [
+        'La CCT y, según el nivel, el número de autorización o de RVOE.',
+        'Cuántos alumnos hay por grupo y quién es el titular de cada grado.',
+        'La formación de la planta docente y cuánta rotación hay de un año a otro.',
+        'Cómo y cada cuándo informan el avance académico, y a quién se le escribe cuando algo no va bien.',
+        'Qué pasa cuando un alumno se atrasa: si hay asesoría, recuperación o acompañamiento, y si eso cuesta aparte.',
+        'El costo **total** del año: inscripción, colegiatura, uniformes, materiales, salidas y cuotas extraordinarias.',
+        'Si hay becas, con qué criterios y en qué fechas se solicitan.'
+      ] },
+      { t: 'p', x: 'Las primeras dos preguntas se contestan con un número. Las demás dicen mucho ' +
+                   'por la forma en que se contestan.' }
+    ],
+    fuentes: [
+      'Constitución Política de los Estados Unidos Mexicanos, artículo 3º, y reforma de obligatoriedad de la media superior (febrero de 2012).',
+      'Ley General de Educación — autorización y reconocimiento de validez oficial de estudios para particulares.',
+      'SEP — Plan de Estudio 2022 para la educación preescolar, primaria y secundaria: campos formativos, fases y ejes articuladores.'
+    ]
+  },
+
+  /* ------------------------------------------------------------------------ */
+  {
+    id: 'las-tardes-tambien-educan',
+    tema: 'Vida escolar',
+    icono: 'balon',
+    foto: 'Deportivas',
+    fecha: '2025-08-26',
+    lectura: 6,
+    autorId: 'pr-08',
+    titulo: 'Las tardes también educan: qué gana un niño en las actividades extraescolares',
+    gancho: 'Entre la última clase y la cena hay un bloque de horas que decide más cosas de las ' +
+            'que parece. Qué dice la investigación, y cómo distinguir una buena actividad de una ' +
+            'guardería cara.',
+    cuerpo: [
+      { t: 'p', x: 'De lunes a viernes, las horas que van del fin de clases a la noche son el ' +
+                   'bloque menos estructurado de la semana de un niño. Lo que se pone ahí ' +
+                   'importa, y no todas las opciones valen lo mismo.' },
+
+      { t: 'h', x: 'Qué encontró la investigación' },
+      { t: 'p', x: 'El estudio más citado sobre programas de la tarde es un metaanálisis de ' +
+                   'Durlak, Weissberg y Pachan (2010) que revisó 68 programas. El resultado tiene ' +
+                   'un matiz que vale oro: los programas mejoraron el autoconcepto, el vínculo con ' +
+                   'la escuela, la conducta social y hasta los resultados académicos… **pero sólo ' +
+                   'los que estaban bien diseñados**. Los que simplemente ocupaban la tarde no ' +
+                   'mostraron esos efectos.' },
+      { t: 'p', x: 'Los autores resumieron el buen diseño en cuatro rasgos: la actividad avanza ' +
+                   'en **secuencia** de lo simple a lo complejo, los niños **hacen** en vez de ' +
+                   'escuchar, hay un **foco** claro de tiempo dedicado a practicar la habilidad, y ' +
+                   'se dice **explícitamente** qué se está aprendiendo. Es una buena lista para ' +
+                   'evaluar cualquier taller.' },
+
+      { t: 'h', x: 'Por qué funciona' },
+      { t: 'lista', x: [
+        '**Entrenan lo mismo que el estudio.** Un deporte de equipo, un instrumento o un proyecto de robótica exigen planear, inhibir el impulso, sostener la atención y corregir sobre la marcha. Son las mismas funciones ejecutivas que se usan para estudiar, practicadas en un contexto donde el niño quiere estar.',
+        '**Dan un lugar donde se es bueno en algo.** Un alumno que en el salón se siente promedio puede ser el que mejor pasa el balón o el que arma el circuito. Esa identidad viaja de regreso al aula, y en la adolescencia pesa muchísimo.',
+        '**Ponen adultos alrededor.** Un entrenador o un instructor es otro adulto que conoce al niño y nota cuando algo cambia. Rara vez se piensa como beneficio y suele serlo.',
+        '**El idioma entra por la puerta de atrás.** Una actividad en inglés funciona porque ahí el idioma es el medio y no el objeto: se usa para lograr algo que importa, que es exactamente como se aprende mejor.'
+      ] },
+
+      { t: 'h', x: 'Cuánto es demasiado' },
+      { t: 'p', x: 'Sobrecargar la tarde es un riesgo real y bastante común. Dos a cuatro tardes ' +
+                   'ocupadas suele ser un punto sano; un niño también necesita tiempo sin ' +
+                   'programar y, sobre todo, dormir lo que le toca.' },
+      { t: 'dato', x: 'Tres señales de que hay que quitar algo: está durmiendo menos, la tarea se ' +
+                      'quedó sin espacio, o llega de mal humor a la actividad que antes le ' +
+                      'gustaba. Cualquiera de las tres basta.' },
+
+      { t: 'h', x: 'Qué preguntar antes de inscribirlo' },
+      { t: 'pasos', x: [
+        { t: 'Quién la da', x: 'Formación del instructor y cuánto lleva con el grupo. La ' +
+              'continuidad importa tanto como el título.' },
+        { t: 'Cuántos son', x: 'Un taller de veinticinco niños con un solo adulto no es un ' +
+              'taller. Pregunte el número real, no el máximo permitido.' },
+        { t: 'A dónde llega', x: '¿Hay una progresión durante el año y algo que cierre —una ' +
+              'muestra, un torneo, una presentación—? Tener un destino cambia por completo el ' +
+              'compromiso de los niños.' },
+        { t: 'Quién lo cuida al final', x: 'Hasta qué hora hay supervisión y cómo es la entrega. ' +
+              'Es lo más aburrido de preguntar y lo primero que uno agradece.' }
+      ] },
+      { t: 'p', x: 'Y una última: deje que elija. Una actividad escogida por el niño y sostenida ' +
+                   'un año completo vale más que tres impuestas y abandonadas en noviembre.' }
+    ],
+    fuentes: [
+      'Durlak, Weissberg y Pachan, «A Meta-Analysis of After-School Programs That Seek to Promote Personal and Social Skills», American Journal of Community Psychology (2010).',
+      'Diamond y Lee, «Interventions Shown to Aid Executive Function Development in Children 4 to 12 Years Old», Science (2011).'
+    ]
+  }
+
+];
 
 /* ===== src/30-store.js ===== */
 /* ============================================================================
@@ -5802,6 +6411,40 @@ const VistaPublica = (function () {
       (alto ? ' style="height:' + alto + '"' : '') + ' loading="lazy" decoding="async">';
   }
 
+  /* Las notas para padres: contenido editorial del sitio, de la más nueva a la
+     más vieja. Si el archivo de notas no está, el sitio se dibuja sin ellas. */
+  function notas() {
+    if (typeof NOTAS !== 'object' || !NOTAS || !NOTAS.length) return [];
+    return NOTAS.slice().sort(porFechaDesc);
+  }
+
+  function nota(id) {
+    var todas = notas();
+    for (var i = 0; i < todas.length; i++) if (todas[i].id === id) return todas[i];
+    return null;
+  }
+
+  /* Quien firma la nota: alguien del claustro o la dirección. */
+  function autorDe(n) {
+    var id = n && n.autorId ? n.autorId : '';
+    if (!id) return null;
+    if (id === 'dir-01' || (DB.direccion && DB.direccion.id === id)) return DB.direccion;
+    return Q.profesor(id) || null;
+  }
+
+  /* El único formato que aceptan los textos de una nota: **negritas**.
+     Se escapa primero y se marca después, para que nadie inyecte etiquetas. */
+  function enfasis(texto) {
+    return U.esc(String(texto == null ? '' : texto))
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function enlaceRuta(ruta, texto, clase, estilo) {
+    return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
+      ' data-accion="app:ir" ' + U.attr({ 'data-args': { ruta: ruta } }) + '>' +
+      U.esc(texto) + '</button>';
+  }
+
   function enlaceAncla(id, texto, clase, estilo) {
     return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
       ' data-accion="pub:ancla" ' + U.attr({ 'data-args': { id: id } }) + '>' +
@@ -5827,6 +6470,7 @@ const VistaPublica = (function () {
             ${enlaceAncla('colegio', 'Conócenos', 'opcional')}
             ${enlaceAncla('oferta', 'Oferta educativa', 'opcional')}
             ${enlaceAncla('claustro', 'Claustro', '')}
+            ${enlaceRuta('#/publico/notas', 'Notas para padres', '')}
             ${enlaceAncla('alianzas', 'Alianzas', 'opcional')}
             ${enlaceAncla('after', 'After Class', 'opcional')}
             ${enlaceAncla('admisiones', 'Informes', 'opcional')}
@@ -5861,6 +6505,7 @@ const VistaPublica = (function () {
               <li>${enlaceAncla('colegio', 'Conócenos', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('oferta', 'Oferta educativa', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('claustro', 'Claustro docente', '', RESET_ENLACE)}</li>
+              <li>${enlaceRuta('#/publico/notas', 'Notas para padres', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('alianzas', 'Nuestras alianzas', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('after', 'After Class', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('admisiones', 'Informes y admisiones', '', RESET_ENLACE)}</li>
@@ -6283,6 +6928,265 @@ const VistaPublica = (function () {
       </section>`;
   }
 
+  /* --------------------------------------------------- notas para padres -- */
+
+  /* Tarjeta de nota. La primera de una rejilla va ancha, con foto grande. */
+  function tarjetaNota(n, destacada) {
+    var a = autorDe(n);
+    return `
+      <button type="button" class="nota-item${destacada ? ' destacada' : ''}" data-accion="pub:nota"
+              ${U.attr({ 'data-args': { id: n.id } })}
+              aria-label="Leer la nota ${U.esc(n.titulo)}">
+        ${foto(n.foto, 'nota-foto')}
+        <div class="nota-cuerpo">
+          <div class="nota-tema">${U.icono(n.icono, 13)} ${U.esc(n.tema)}</div>
+          <h3 class="nota-tit">${U.esc(n.titulo)}</h3>
+          <p class="nota-gancho">${U.esc(recortar(n.gancho, destacada ? 200 : 128))}</p>
+          <div class="nota-meta">
+            ${a ? U.avatar(a, 'sm') : ''}
+            <span>${a ? U.esc(a.nombre) : U.esc(DB.escuela.nombre)}</span>
+            <span class="punto" aria-hidden="true">·</span>
+            <span>${U.fecha(n.fecha, 'corta')}</span>
+            <span class="punto" aria-hidden="true">·</span>
+            <span>${n.lectura} min de lectura</span>
+          </div>
+        </div>
+      </button>`;
+  }
+
+  /* En la portada van las tres más recientes; el resto vive en el índice. */
+  function bloqueNotas() {
+    var todas = notas();
+    if (!todas.length) return '';
+    var visibles = todas.slice(0, 3);
+    return `
+      <section class="bloque" id="notas" style="${ANCLA}">
+        <h2 class="bloque-tit">Notas para padres</h2>
+        <p class="intro">
+          Lo que hemos ido aprendiendo de estar cuarenta y tantos años frente a grupo, puesto por
+          escrito: orientación sobre el aprendizaje de los hijos, sobre cómo funciona la escuela
+          en México y sobre las decisiones que toca tomar en casa.
+        </p>
+        <div class="notas">
+          ${visibles.map(function (n, i) { return tarjetaNota(n, i === 0); }).join('')}
+        </div>
+        ${todas.length > visibles.length ? `
+          <div class="centro mt-2">
+            <button type="button" class="btn" data-accion="app:ir"
+                    ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+              ${U.icono('libro', 16)} Ver las ${todas.length} notas
+            </button>
+          </div>` : ''}
+      </section>`;
+  }
+
+  /* --------------------------------------------------- índice de las notas - */
+
+  function paginaNotas() {
+    var todas = notas();
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="mt-3">
+            ${U.migas([{ texto: 'Inicio', ruta: '#/publico' }, { texto: 'Notas para padres' }])}
+          </div>
+          <section class="bloque" style="padding-top:1.4rem">
+            <h1 class="bloque-tit" style="font-size:2.1rem">Notas para padres</h1>
+            <p class="intro" style="max-width:62ch">
+              Textos breves sobre aprendizaje, crianza y decisiones escolares, firmados por el
+              claustro del colegio. No son recomendaciones sueltas: cada nota dice de dónde sale
+              lo que afirma, para que usted pueda ir a la fuente si quiere.
+            </p>
+            ${todas.length
+              ? '<div class="notas">' +
+                todas.map(function (n, i) { return tarjetaNota(n, i === 0); }).join('') +
+                '</div>'
+              : U.vacio({
+                  icono: 'libro',
+                  titulo: 'Todavía no hay notas publicadas',
+                  texto: 'El colegio publicará aquí sus textos de orientación para las familias.'
+                })}
+          </section>
+          <section class="bloque" style="padding-top:0">
+            <div class="fila envuelve gap-1">
+              <button type="button" class="btn" data-accion="app:ir"
+                      ${U.attr({ 'data-args': { ruta: '#/publico' } })}>
+                ${U.icono('flecha-izq', 16)} Volver al inicio
+              </button>
+              <button type="button" class="btn btn-primario" data-accion="pub:ancla"
+                      ${U.attr({ 'data-args': { id: 'admisiones' } })}>
+                ${U.icono('chat', 16)} Hablar con admisiones
+              </button>
+            </div>
+          </section>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
+  /* ------------------------------------------------------ una nota entera - */
+
+  /* Dibuja un bloque del cuerpo. Lo que no reconoce, lo ignora en silencio. */
+  function bloqueDeNota(b) {
+    if (!b || !b.t) return '';
+    if (b.t === 'p') return '<p>' + enfasis(b.x) + '</p>';
+    if (b.t === 'h') return '<h2>' + enfasis(b.x) + '</h2>';
+    if (b.t === 'lista') {
+      return '<ul class="nota-lista">' + (b.x || []).map(function (i) {
+        return '<li>' + enfasis(i) + '</li>';
+      }).join('') + '</ul>';
+    }
+    if (b.t === 'pasos') {
+      return '<ol class="nota-pasos">' + (b.x || []).map(function (i) {
+        return '<li><span class="t">' + enfasis(i.t) + '</span>' +
+               '<span class="d">' + enfasis(i.x) + '</span></li>';
+      }).join('') + '</ol>';
+    }
+    if (b.t === 'dato') {
+      return '<aside class="nota-dato">' +
+        '<span class="ico">' + U.icono('info', 16) + '</span>' +
+        '<div>' + enfasis(b.x) + '</div></aside>';
+    }
+    if (b.t === 'cita') {
+      return '<blockquote class="cita nota-cita">&#8220;' + enfasis(b.x) + '&#8221;' +
+        (b.de ? '<footer>' + U.esc(b.de) + '</footer>' : '') + '</blockquote>';
+    }
+    if (b.t === 'tabla') {
+      return '<div class="tabla-envoltura nota-tabla"><table class="tabla"><thead><tr>' +
+        (b.cab || []).map(function (c) { return '<th>' + U.esc(c) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' +
+        (b.filas || []).map(function (f) {
+          return '<tr>' + f.map(function (c, i) {
+            return '<td' + (i ? ' class="num mono"' : '') + '>' + enfasis(c) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+    }
+    return '';
+  }
+
+  function firmaDeNota(n) {
+    var a = autorDe(n);
+    if (!a) return '';
+    var esDocente = a.rol === 'profesor';
+    return `
+      <div class="nota-firma">
+        ${U.avatar(a, 'lg')}
+        <div class="crece">
+          <div class="etiqueta">Escrito por</div>
+          <div class="nom">${U.esc(a.nombre)}</div>
+          <div class="silencio" style="font-size:.85rem">${U.esc(a.titulo || a.cargo || '')}</div>
+        </div>
+        ${esDocente ? `
+          <button type="button" class="btn btn-suave btn-sm" data-accion="pub:profesor"
+                  ${U.attr({ 'data-args': { id: a.id } })}>
+            ${U.icono('usuario', 15)} Ver su perfil
+          </button>` : ''}
+      </div>`;
+  }
+
+  function otrasNotas(n) {
+    var otras = notas().filter(function (o) { return o.id !== n.id; }).slice(0, 2);
+    if (!otras.length) return '';
+    return `
+      <section class="bloque" style="padding-top:.5rem">
+        <h2 class="bloque-tit" style="font-size:1.35rem">Siga leyendo</h2>
+        <div class="notas notas-pie">
+          ${otras.map(function (o) { return tarjetaNota(o, false); }).join('')}
+        </div>
+      </section>`;
+  }
+
+  function notaNoEncontrada() {
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="panel mt-3">
+            <div class="panel-cuerpo">
+              ${U.vacio({
+                icono: 'libro',
+                titulo: 'No encontramos esa nota',
+                texto: 'La liga apunta a un texto que ya no está publicado en el sitio.'
+              })}
+              <div class="centro">
+                <button type="button" class="btn btn-primario" data-accion="app:ir"
+                        ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+                  ${U.icono('flecha-izq', 16)} Ver todas las notas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
+  function paginaNota(ctx) {
+    var id = ctx.params && ctx.params.id ? ctx.params.id : '';
+    var n = id ? nota(id) : null;
+    if (!n) return notaNoEncontrada();
+    var a = autorDe(n);
+
+    return `
+      <div class="sitio">
+        ${navSitio()}
+        <div class="sitio-cuerpo">
+          <div class="mt-3">
+            ${U.migas([
+              { texto: 'Inicio', ruta: '#/publico' },
+              { texto: 'Notas para padres', ruta: '#/publico/notas' },
+              { texto: recortar(n.titulo, 42) }
+            ])}
+          </div>
+
+          <article class="nota-hoja">
+            <div class="nota-tema">${U.icono(n.icono, 13)} ${U.esc(n.tema)}</div>
+            <h1>${U.esc(n.titulo)}</h1>
+            <p class="nota-entrada">${U.esc(n.gancho)}</p>
+            <div class="nota-meta grande">
+              ${a ? U.avatar(a, 'sm') : ''}
+              <span>${a ? U.esc(a.nombre) : U.esc(DB.escuela.nombre)}</span>
+              <span class="punto" aria-hidden="true">·</span>
+              <span>${U.fecha(n.fecha, 'larga')}</span>
+              <span class="punto" aria-hidden="true">·</span>
+              <span>${n.lectura} min de lectura</span>
+            </div>
+
+            ${n.foto ? '<figure class="nota-portada">' + foto(n.foto, 'nota-portada-img') + '</figure>' : ''}
+
+            <div class="nota-texto">
+              ${(n.cuerpo || []).map(bloqueDeNota).join('')}
+            </div>
+
+            ${(n.fuentes || []).length ? `
+              <div class="nota-fuentes">
+                <div class="etiqueta">De dónde sale lo que dice esta nota</div>
+                <ul>${n.fuentes.map(function (f) { return '<li>' + U.esc(f) + '</li>'; }).join('')}</ul>
+              </div>` : ''}
+
+            ${firmaDeNota(n)}
+          </article>
+
+          ${otrasNotas(n)}
+
+          <section class="bloque" style="padding-top:0">
+            <div class="fila envuelve gap-1">
+              <button type="button" class="btn" data-accion="app:ir"
+                      ${U.attr({ 'data-args': { ruta: '#/publico/notas' } })}>
+                ${U.icono('flecha-izq', 16)} Todas las notas
+              </button>
+              <button type="button" class="btn btn-primario" data-accion="pub:acceder">
+                ${U.icono('candado', 16)} Entrar al portal
+              </button>
+            </div>
+          </section>
+        </div>
+        ${pieSitio()}
+      </div>`;
+  }
+
   function bloqueAdmisiones() {
     var e = DB.escuela;
     var b = becas();
@@ -6385,6 +7289,7 @@ const VistaPublica = (function () {
           ${bloqueClaustro()}
           ${bloqueAlianzas()}
           ${bloqueAfter()}
+          ${bloqueNotas()}
           ${bloqueAdmisiones()}
         </div>
         ${pieSitio()}
@@ -6740,9 +7645,26 @@ const VistaPublica = (function () {
   return {
     titulo: 'The Livingstone',
 
+    /* El título de la pestaña cambia con la ruta: cada nota tiene el suyo. */
+    tituloDe: function (ctx) {
+      var c = ctx || {};
+      if (c.seccion === 'notas') return 'Notas para padres';
+      if (c.seccion === 'nota') {
+        var n = nota((c.params && c.params.id) || '');
+        return n ? n.titulo : 'Notas para padres';
+      }
+      if (c.seccion === 'profesor') {
+        var pr = Q.profesor((c.params && c.params.id) || '');
+        return pr && pr.perfilPublico ? pr.nombre : 'Claustro docente';
+      }
+      return '';
+    },
+
     render: function (ctx) {
       var c = ctx || {};
       if (c.seccion === 'profesor') return perfil(c);
+      if (c.seccion === 'notas') return paginaNotas();
+      if (c.seccion === 'nota') return paginaNota(c);
       return portada();
     },
 
@@ -6752,6 +7674,13 @@ const VistaPublica = (function () {
         var id = args && args.id ? args.id : '';
         if (!id) { U.toast('Esa materia todavía no tiene profesor asignado.', 'aviso'); return; }
         App.ir('#/publico/profesor?id=' + encodeURIComponent(id));
+      },
+
+      /* Abre una nota para padres. */
+      'pub:nota': function (args) {
+        var id = args && args.id ? args.id : '';
+        if (!id) return;
+        App.ir('#/publico/nota?id=' + encodeURIComponent(id));
       },
 
       /* Salta con scroll suave a un bloque de la portada; si no estamos ahí, vuelve primero. */
@@ -13160,8 +14089,15 @@ const Acciones = {};
       extra = 'Acceso a la demostración';
     } else {
       var vista = VISTAS[ctx.zona];
-      var item = vista ? itemPorId(navDe(vista), ctx.seccion) : null;
-      extra = (item && item.texto) ? item.texto : (vista && vista.titulo ? vista.titulo : '');
+      /* Una vista puede decidir su propio título en función de la ruta:
+         es lo que deja que cada nota para padres tenga el suyo. */
+      if (vista && typeof vista.tituloDe === 'function') {
+        extra = intentar(function () { return vista.tituloDe(ctx) || ''; }, '');
+      }
+      if (!extra) {
+        var item = vista ? itemPorId(navDe(vista), ctx.seccion) : null;
+        extra = (item && item.texto) ? item.texto : (vista && vista.titulo ? vista.titulo : '');
+      }
     }
     document.title = DB.escuela.nombre + ((extra && extra !== DB.escuela.nombre) ? ' · ' + extra : '');
   }

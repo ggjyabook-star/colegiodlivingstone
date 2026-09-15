@@ -257,8 +257,15 @@ const Acciones = {};
       extra = 'Acceso a la demostración';
     } else {
       var vista = VISTAS[ctx.zona];
-      var item = vista ? itemPorId(navDe(vista), ctx.seccion) : null;
-      extra = (item && item.texto) ? item.texto : (vista && vista.titulo ? vista.titulo : '');
+      /* Una vista puede decidir su propio título en función de la ruta:
+         es lo que deja que cada nota para padres tenga el suyo. */
+      if (vista && typeof vista.tituloDe === 'function') {
+        extra = intentar(function () { return vista.tituloDe(ctx) || ''; }, '');
+      }
+      if (!extra) {
+        var item = vista ? itemPorId(navDe(vista), ctx.seccion) : null;
+        extra = (item && item.texto) ? item.texto : (vista && vista.titulo ? vista.titulo : '');
+      }
     }
     document.title = DB.escuela.nombre + ((extra && extra !== DB.escuela.nombre) ? ' · ' + extra : '');
   }
