@@ -15,7 +15,7 @@ var DB;
 /* ---------------------------------------------------------------- Store --- */
 const Store = (function () {
 
-  var CLAVE_DB = 'livingstone.db.v4';
+  var CLAVE_DB = 'livingstone.db.v5';
   var suscriptores = [];
   var COLECCIONES = [
     'niveles', 'grados',

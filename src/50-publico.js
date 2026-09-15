@@ -130,6 +130,10 @@ const VistaPublica = (function () {
             ${enlaceAncla('after', 'After Class', 'opcional')}
             ${enlaceAncla('admisiones', 'Informes', 'opcional')}
           </nav>
+          <button type="button" class="btn btn-fantasma btn-sm btn-icono" data-accion="app:tema"
+                  aria-label="${U.esc(App.tituloTema())}" title="${U.esc(App.tituloTema())}">
+            ${U.icono(App.iconoTema(), 16)}
+          </button>
           <button type="button" class="btn btn-primario btn-sm" data-accion="pub:acceder">
             ${U.icono('candado', 15)} Acceder al portal
           </button>
@@ -341,7 +345,7 @@ const VistaPublica = (function () {
             return `
             <article class="pilar">
               <div class="cab">
-                <span class="ico">${U.icono(p.icono, 19)}</span>
+                <span class="ico">${U.icono(p.icono, 18)}</span>
                 <div class="t">${U.esc(p.titulo)}</div>
               </div>
               <p>${U.esc(p.texto)}</p>

@@ -32,7 +32,7 @@ se concatenan **en orden numérico** dentro de un único `<script>`. Por lo tant
 
 ```js
 DB = {
-  version: 4,
+  version: 5,
   contador: 100,   // lo usa Store.uid
   escuela: {
     nombre, lema, ciclo, fundacion, direccion, ciudad, telefono, email, sitio,
@@ -83,7 +83,7 @@ suma(valor × peso) / suma(peso) **solo** sobre evaluaciones ya calificadas para
 ## 2. `Store` (30-store.js)
 
 ```js
-Store.cargar()           // lee localStorage 'livingstone.db.v4'; si no hay o cambia version, clona SEMILLA
+Store.cargar()           // lee localStorage 'livingstone.db.v5'; si no hay o cambia version, clona SEMILLA
 Store.guardar()          // persiste DB en try/catch y notifica suscriptores
 Store.reiniciar()        // borra y re-siembra desde SEMILLA, cierra sesión
 Store.suscribir(fn)

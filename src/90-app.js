@@ -178,6 +178,11 @@ const Acciones = {};
     return resolver().ctx;
   };
 
+  /* El sitio público dibuja su propia barra: necesita saber cómo va el tema. */
+  App.tema = function () { return temaActual(); };
+  App.iconoTema = iconoTema;
+  App.tituloTema = tituloTema;
+
   // Acepta "#/alumno/tareas", "/alumno/tareas" o "alumno/tareas".
   App.ir = function (ruta) {
     var r = String(ruta == null ? '' : ruta);
@@ -318,7 +323,7 @@ const Acciones = {};
           '</div>' +
           '<div class="fila gap-1 mt-1">' +
             '<button type="button" class="btn btn-fantasma btn-sm crece"' + acc('app:tema') +
-              ' title="Cambiar entre tema claro y oscuro">' +
+              ' title="' + U.esc(tituloTema()) + '">' +
               U.icono(iconoTema(), 15) + '<span>Tema</span>' +
             '</button>' +
             '<button type="button" class="btn btn-fantasma btn-sm"' + acc('app:salir') + '>' +
@@ -343,6 +348,9 @@ const Acciones = {};
           '<h1 class="truncar">' + U.esc(titulo) + '</h1>' +
           '<div class="sub truncar">' + U.esc(sub) + '</div>' +
         '</div>' +
+        '<button type="button" class="btn btn-fantasma btn-sm btn-icono"' + acc('app:tema') +
+          ' aria-label="' + U.esc(tituloTema()) + '" title="' + U.esc(tituloTema()) + '">' +
+          U.icono(iconoTema(), 16) + '</button>' +
         '<button type="button" class="btn btn-fantasma btn-sm"' + acc('app:ir', { ruta: '#/publico' }) + '>' +
           U.icono('casa', 15) + '<span class="nowrap">Sitio público</span>' +
         '</button>' +
@@ -437,7 +445,7 @@ const Acciones = {};
               U.icono('flecha-izq', 15) + '<span>Volver al sitio</span>' +
             '</button>' +
             '<button type="button" class="btn btn-fantasma btn-sm btn-icono"' + acc('app:tema') +
-              ' aria-label="Cambiar entre tema claro y oscuro">' + U.icono(iconoTema(), 16) + '</button>' +
+              ' aria-label="' + U.esc(tituloTema()) + '">' + U.icono(iconoTema(), 16) + '</button>' +
           '</div>' +
 
           '<div class="fila gap-2 mb-2">' +
@@ -566,8 +574,13 @@ const Acciones = {};
     return oscuro ? 'dark' : 'light';
   }
 
+  /* El icono anuncia a dónde vas: sol si vas a aclarar, luna si vas a oscurecer. */
   function iconoTema() {
-    return temaActual() === 'dark' ? 'ojo-cerrado' : 'ojo';
+    return temaActual() === 'dark' ? 'sol' : 'luna';
+  }
+
+  function tituloTema() {
+    return temaActual() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
   }
 
   function restaurarTema() {

@@ -99,21 +99,21 @@ const SEMILLA = (function construirSemilla() {
       { valor: '40+', etiqueta: 'Años de trayectoria' }
     ],
     pilares: [
-      { icono: 'escudo', titulo: 'Identidad',
+      { icono: 'identidad', titulo: 'Identidad',
         texto: 'En The Livingstone los estudiantes se sienten aceptados y comprendidos; nuestra ' +
           'comunidad se fortalece con la calidad humana y la excelencia académica.' },
-      { icono: 'estrella', titulo: 'Valores',
+      { icono: 'valores', titulo: 'Valores',
         texto: 'Buscamos la excelencia académica y la integridad humana a través de un modelo ' +
           'educativo basado en altos valores humanos.' },
-      { icono: 'chat', titulo: 'Idiomas',
+      { icono: 'idiomas', titulo: 'Idiomas',
         texto: 'Nuestro enfoque bicultural prepara a los alumnos para certificarse en inglés con ' +
           'Cambridge y Oxford, mientras aprenden también francés.' },
-      { icono: 'engrane', titulo: 'Robótica',
+      { icono: 'robotica', titulo: 'Robótica',
         texto: 'Experiencia práctica con los últimos lenguajes y tecnologías de programación.' },
-      { icono: 'foto', titulo: 'Arte',
+      { icono: 'arte', titulo: 'Arte',
         texto: 'Nuestros alumnos utilizan los recursos, elementos y materiales de las artes para ' +
           'expresar sus ideas, sentimientos y emociones.' },
-      { icono: 'grafica', titulo: 'Ciencias exactas',
+      { icono: 'ciencias', titulo: 'Ciencias exactas',
         texto: 'El alto nivel educativo en matemáticas nos permite estar dentro de los primeros ' +
           'lugares de la prueba MARSA.' }
     ],
@@ -133,9 +133,9 @@ const SEMILLA = (function construirSemilla() {
           'Flyers en 6º, y Preliminary (B1) o First (B2) en 3º de secundaria.' }
     ],
     afterclass: [
-      { grupo: 'Deportivas', icono: 'usuarios',
+      { grupo: 'Deportivas', icono: 'balon',
         actividades: ['Tae Kwon Do', 'Fútbol', 'Basquetball', 'Voleyball', 'Ajedrez'] },
-      { grupo: 'Arte y danza', icono: 'foto',
+      { grupo: 'Arte y danza', icono: 'musica',
         actividades: ['Danza moderna', 'Danza folclórica', 'Música', 'Pintura', 'Teatro'] },
       { grupo: 'Culturales', icono: 'libro',
         actividades: ['Club de tareas', 'Escuela de idiomas', 'Club de robótica'] }
@@ -1460,7 +1460,7 @@ const SEMILLA = (function construirSemilla() {
   });
 
   return {
-    version: 4,
+    version: 5,
     contador: 100,
     escuela: escuela,
     direccion: direccion,
