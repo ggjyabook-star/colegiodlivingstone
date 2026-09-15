@@ -32,12 +32,17 @@
   --marca-contraste:#FFFFFF;
   --marca-suave:    #E2E7EE;
 
-  --acento:         #0B4BE0;
-  --acento-suave:   #E3EBFF;
+  /* Amarillo del colegio, llevado a un dorado cálido: el limón puro no se
+     lee sobre blanco. Va de relleno con el marino del escudo encima, como en
+     su sitio; para trazos y letra chica va el oro oscuro. */
+  --acento:         #8C6A0A;
+  --acento-vivo:    #F0C23C;
+  --acento-ink:     #2B3D53;
+  --acento-suave:   #FBF1D7;
 
   /* El ámbar de las estrellas no es de la marca: es el único color que lee
      igual de rápido en una valoración, y por eso vive en su propio token. */
-  --estrella:       #C98A08;
+  --estrella:       #C8940C;
 
   --ok:             #1F6F63;
   --ok-suave:       #DCEEEA;
@@ -92,9 +97,11 @@
     --marca-contraste:#0B131C;
     --marca-suave:  #1C2E42;
 
-    --acento:       #86A9FF;
-    --acento-suave: #1B2C4D;
-    --estrella:     #E9B44C;
+    --acento:       #EFC85C;
+    --acento-vivo:  #F0C23C;
+    --acento-ink:   #1E1A08;
+    --acento-suave: #3A3112;
+    --estrella:     #EFC85C;
 
     --ok:           #5FC7A5;
     --ok-suave:     #123329;
@@ -137,9 +144,11 @@
   --marca-contraste:#0B131C;
   --marca-suave:  #1C2E42;
 
-  --acento:       #86A9FF;
-  --acento-suave: #1B2C4D;
-  --estrella:     #E9B44C;
+  --acento:       #EFC85C;
+  --acento-vivo:  #F0C23C;
+  --acento-ink:   #1E1A08;
+  --acento-suave: #3A3112;
+  --estrella:     #EFC85C;
 
   --ok:           #5FC7A5;
   --ok-suave:     #123329;
@@ -205,6 +214,12 @@ small { font-size: .82em; }
 
 /* ---------- 5. Utilidades ------------------------------------------------- */
 .oculto { display: none !important; }
+/* Pares para dar la versión corta de un dato en pantallas angostas. */
+.solo-angosto { display: none; }
+@media (max-width: 760px) {
+  .solo-ancho { display: none; }
+  .solo-angosto { display: inline; }
+}
 .txt-c { text-align: center; }
 .txt-d { text-align: right; }
 .mt-0{margin-top:0}.mt-1{margin-top:.5rem}.mt-2{margin-top:1rem}.mt-3{margin-top:1.6rem}
@@ -254,9 +269,9 @@ small { font-size: .82em; }
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .22rem .6rem;
   border-radius: var(--r-full);
-  background: var(--acento-suave);
-  color: var(--acento);
-  font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--acento-vivo);
+  color: var(--acento-ink);
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
 }
 
 /* ---------- 7. Cascarón de la app ---------------------------------------- */
@@ -774,7 +789,7 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 }
 .hero-sub { font-size: 1.03rem; color: var(--tinta-2); max-width: 46ch; margin: 0 0 1.4rem; }
 .hero-datos {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px; background: var(--linea);
   border: 1px solid var(--linea); border-radius: var(--r-lg); overflow: hidden;
 }
@@ -853,7 +868,7 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 .cuenta .det { font-size: .77rem; color: var(--tinta-3); }
 .aviso-demo {
   display: flex; align-items: flex-start; gap: .6rem;
-  background: var(--acento-suave); color: var(--acento);
+  background: var(--acento-suave); color: var(--tinta);
   border-radius: var(--r-md); padding: .7rem .9rem; font-size: .84rem;
 }
 .aviso-demo strong { color: inherit; }
@@ -948,7 +963,12 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 
 .pilares { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); border-radius: var(--r-lg); overflow: hidden; }
 .pilar { background: var(--superficie); padding: 1.1rem; display: flex; flex-direction: column; gap: .4rem; }
-.pilar .ico { color: var(--acento); display: flex; }
+.pilar .cab { display: flex; align-items: center; gap: .6rem; }
+.pilar .ico {
+  flex: none; width: 34px; height: 34px; border-radius: var(--r-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--acento-vivo); color: var(--acento-ink);
+}
 .pilar .t { font-family: var(--f-display); font-size: 1.12rem; font-weight: 700; }
 .pilar p { font-size: .84rem; color: var(--tinta-2); margin: 0; }
 
@@ -990,6 +1010,43 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
     background-color: rgba(255, 255, 255, .10);
     border-radius: 5px;
   }
+}
+
+/* ============================================================================
+   27. Teléfono: el sitio se aprieta para que quepa sin sentirse cargado
+   ========================================================================== */
+@media (max-width: 760px) {
+  .sitio-cuerpo { padding: 0 1.1rem 2rem; }
+
+  .hero { padding: 1.8rem 0 1.2rem; gap: 1.4rem; }
+  .hero-sello { gap: .7rem; margin-bottom: .8rem; }
+  .hero-sub { font-size: .96rem; margin-bottom: 1.1rem; }
+  .hero-tarjeta { padding: 1rem; }
+
+  /* Cuatro datos nunca dejan un hueco: se acomodan dos y dos. */
+  .hero-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-datos > div { padding: .7rem .8rem; }
+  .hero-datos .v { font-size: 1.32rem; }
+
+  .bloque { padding: 1.7rem 0; }
+  .bloque-tit { font-size: 1.42rem; }
+  .bloque .intro { font-size: .92rem; margin-bottom: 1.1rem; }
+
+  .niveles, .alianzas, .after, .claustro { gap: .8rem; }
+  .nivel-item, .claustro-item, .after-grupo, .pilar { padding: .95rem; }
+  .nivel-item .nom { font-size: 1.18rem; }
+  .alianza { padding: .95rem; gap: .7rem; }
+  .alianza .sigla { width: 44px; height: 44px; font-size: .84rem; }
+
+  /* La tabla de grados se lee mejor de un renglón por grado, aunque haya que
+     deslizarla de lado, que con cada nombre partido en cuatro. */
+  .tabla-grados th, .tabla-grados td { white-space: nowrap; }
+
+  /* En el claustro, las especialidades caben en el perfil: aquí estorban. */
+  .claustro-item .chip { display: none; }
+
+  .sitio-pie { padding: 1.6rem 1.1rem; }
+  .sitio-pie .interior { gap: 1.1rem; }
 }
 </style>
 </head>
@@ -5833,8 +5890,10 @@ const VistaPublica = (function () {
           ${(e.pilares || []).map(function (p) {
             return `
             <article class="pilar">
-              <span class="ico">${U.icono(p.icono, 22)}</span>
-              <div class="t">${U.esc(p.titulo)}</div>
+              <div class="cab">
+                <span class="ico">${U.icono(p.icono, 19)}</span>
+                <div class="t">${U.esc(p.titulo)}</div>
+              </div>
               <p>${U.esc(p.texto)}</p>
             </article>`;
           }).join('')}
@@ -5886,7 +5945,7 @@ const VistaPublica = (function () {
         <div class="panel">
           <div class="panel-cuerpo sin-relleno">
             <div class="tabla-envoltura">
-              <table class="tabla">
+              <table class="tabla tabla-grados">
                 <thead>
                   <tr>
                     <th>Grado</th><th>Titular</th><th>Materias del plan</th>
@@ -5908,7 +5967,8 @@ const VistaPublica = (function () {
                           U.attr({ 'data-args': { id: tutor.id } }) + '>' + U.esc(tutor.nombre) + '</button>'
                         : '<span class="silencio">Por asignar</span>'}</td>
                       <td class="silencio" style="font-size:.82rem">
-                        ${mats.map(function (m) { return U.esc(m.nombre); }).join(' · ')}
+                        <span class="solo-ancho">${mats.map(function (m) { return U.esc(m.nombre); }).join(' · ')}</span>
+                        <span class="solo-angosto">${plural(mats.length, 'materia', 'materias')}</span>
                       </td>
                       <td class="num mono">${U.esc(g.aula)}</td>
                     </tr>`;
@@ -6613,6 +6673,14 @@ const VistaAlumno = (function () {
 
   function esCorreo(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '')); }
 
+  /* «Aula B-11», pero «Laboratorio 1» y «Aula de idiomas 2» tal cual: el
+     nombre del espacio ya dice qué es. */
+  function espacio(aula) {
+    var t = String(aula || '').trim();
+    if (!t) return 'Por asignar';
+    return /^(aula|lab|salón|salon|taller|centro)/i.test(t) ? t : 'Aula ' + t;
+  }
+
   function horarioLegible(m) {
     if (!m || !m.horario || !m.horario.length) return 'Horario por confirmar';
     return m.horario.map(function (b) {
@@ -7025,7 +7093,7 @@ const VistaAlumno = (function () {
       '<div class="silencio" style="font-size:.79rem">' +
       U.icono('reloj', 13) + ' ' + U.esc(horarioLegible(m)) + '</div>' +
       '<div class="silencio" style="font-size:.79rem">' +
-      U.icono('pin', 13) + ' Aula ' + U.esc(m.aula) + '</div>' +
+      U.icono('pin', 13) + ' ' + U.esc(espacio(m.aula)) + '</div>' +
       '<div class="separador" style="margin:.4rem 0"></div>' +
       '<div class="entre gap-1">' +
       '<span class="etiqueta">Promedio</span>' +
@@ -7103,7 +7171,7 @@ const VistaAlumno = (function () {
           '<p class="silencio mt-1" style="font-size:.88rem;max-width:62ch">' + U.esc(m.descripcion) + '</p>' +
           '<div class="fila envuelve gap-1 mt-1">' +
           '<span class="chip">' + U.icono('reloj', 13) + ' ' + U.esc(horarioLegible(m)) + '</span>' +
-          '<span class="chip">' + U.icono('pin', 13) + ' Aula ' + U.esc(m.aula) + '</span>' +
+          '<span class="chip">' + U.icono('pin', 13) + ' ' + U.esc(espacio(m.aula)) + '</span>' +
           '<span class="chip">' + U.icono('birrete', 13) + ' ' + m.creditos + ' créditos</span>' +
           '</div></div>' +
           '<div class="caja-suave" style="min-width:250px">' +
@@ -8486,6 +8554,13 @@ const VistaProfesor = (function () {
     return g ? g.corto : 'Sin grado';
   }
 
+  /* El nombre del espacio ya dice qué es cuando empieza por Aula o Laboratorio. */
+  function espacio(aula) {
+    var t = String(aula || '').trim();
+    if (!t) return 'Por asignar';
+    return /^(aula|lab|salón|salon|taller|centro)/i.test(t) ? t : 'Aula ' + t;
+  }
+
   function horarioTexto(m) {
     if (!m.horario || !m.horario.length) return 'Sin horario asignado';
     return m.horario.map(function (b) { return b.dia + ' ' + b.inicio + '–' + b.fin; }).join(' · ');
@@ -8810,7 +8885,7 @@ const VistaProfesor = (function () {
 
     return U.panel({
       titulo: 'Horario de la materia',
-      sub: 'Aula ' + m.aula + ' · ' + DB.escuela.diasHabiles,
+      sub: espacio(m.aula) + ' · ' + DB.escuela.diasHabiles,
       acciones: '<button type="button" class="btn btn-sm" data-accion="pr:formMateria"' + args({ id: m.id }) +
         '>' + U.icono('lapiz', 15) + ' Editar horario</button>',
       cuerpo: cuerpo + (choques.length
@@ -8848,7 +8923,7 @@ const VistaProfesor = (function () {
         variante: (Q.promedioGrupo(m.id) || 0) >= 8 ? 'ok' : 'aviso', icono: 'grafica', sub: 'Ponderado por pesos'
       }) + '</div>' +
       '<div class="col-3">' + U.kpi({ etiqueta: 'Evaluaciones', valor: evs.length, sub: 'Suma de pesos ' + sumaPesos(m.id).toFixed(2), icono: 'cheque' }) + '</div>' +
-      '<div class="col-3">' + U.kpi({ etiqueta: 'Créditos', valor: m.creditos, sub: 'Aula ' + esc(m.aula), icono: 'birrete' }) + '</div>' +
+      '<div class="col-3">' + U.kpi({ etiqueta: 'Créditos', valor: m.creditos, sub: esc(espacio(m.aula)), icono: 'birrete' }) + '</div>' +
       '</div>';
 
     return '<div class="contenedor">' +

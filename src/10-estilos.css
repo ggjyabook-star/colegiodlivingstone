@@ -23,12 +23,17 @@
   --marca-contraste:#FFFFFF;
   --marca-suave:    #E2E7EE;
 
-  --acento:         #0B4BE0;
-  --acento-suave:   #E3EBFF;
+  /* Amarillo del colegio, llevado a un dorado cálido: el limón puro no se
+     lee sobre blanco. Va de relleno con el marino del escudo encima, como en
+     su sitio; para trazos y letra chica va el oro oscuro. */
+  --acento:         #8C6A0A;
+  --acento-vivo:    #F0C23C;
+  --acento-ink:     #2B3D53;
+  --acento-suave:   #FBF1D7;
 
   /* El ámbar de las estrellas no es de la marca: es el único color que lee
      igual de rápido en una valoración, y por eso vive en su propio token. */
-  --estrella:       #C98A08;
+  --estrella:       #C8940C;
 
   --ok:             #1F6F63;
   --ok-suave:       #DCEEEA;
@@ -83,9 +88,11 @@
     --marca-contraste:#0B131C;
     --marca-suave:  #1C2E42;
 
-    --acento:       #86A9FF;
-    --acento-suave: #1B2C4D;
-    --estrella:     #E9B44C;
+    --acento:       #EFC85C;
+    --acento-vivo:  #F0C23C;
+    --acento-ink:   #1E1A08;
+    --acento-suave: #3A3112;
+    --estrella:     #EFC85C;
 
     --ok:           #5FC7A5;
     --ok-suave:     #123329;
@@ -128,9 +135,11 @@
   --marca-contraste:#0B131C;
   --marca-suave:  #1C2E42;
 
-  --acento:       #86A9FF;
-  --acento-suave: #1B2C4D;
-  --estrella:     #E9B44C;
+  --acento:       #EFC85C;
+  --acento-vivo:  #F0C23C;
+  --acento-ink:   #1E1A08;
+  --acento-suave: #3A3112;
+  --estrella:     #EFC85C;
 
   --ok:           #5FC7A5;
   --ok-suave:     #123329;
@@ -196,6 +205,12 @@ small { font-size: .82em; }
 
 /* ---------- 5. Utilidades ------------------------------------------------- */
 .oculto { display: none !important; }
+/* Pares para dar la versión corta de un dato en pantallas angostas. */
+.solo-angosto { display: none; }
+@media (max-width: 760px) {
+  .solo-ancho { display: none; }
+  .solo-angosto { display: inline; }
+}
 .txt-c { text-align: center; }
 .txt-d { text-align: right; }
 .mt-0{margin-top:0}.mt-1{margin-top:.5rem}.mt-2{margin-top:1rem}.mt-3{margin-top:1.6rem}
@@ -245,9 +260,9 @@ small { font-size: .82em; }
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .22rem .6rem;
   border-radius: var(--r-full);
-  background: var(--acento-suave);
-  color: var(--acento);
-  font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--acento-vivo);
+  color: var(--acento-ink);
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
 }
 
 /* ---------- 7. Cascarón de la app ---------------------------------------- */
@@ -765,7 +780,7 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 }
 .hero-sub { font-size: 1.03rem; color: var(--tinta-2); max-width: 46ch; margin: 0 0 1.4rem; }
 .hero-datos {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px; background: var(--linea);
   border: 1px solid var(--linea); border-radius: var(--r-lg); overflow: hidden;
 }
@@ -844,7 +859,7 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 .cuenta .det { font-size: .77rem; color: var(--tinta-3); }
 .aviso-demo {
   display: flex; align-items: flex-start; gap: .6rem;
-  background: var(--acento-suave); color: var(--acento);
+  background: var(--acento-suave); color: var(--tinta);
   border-radius: var(--r-md); padding: .7rem .9rem; font-size: .84rem;
 }
 .aviso-demo strong { color: inherit; }
@@ -939,7 +954,12 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 
 .pilares { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); border-radius: var(--r-lg); overflow: hidden; }
 .pilar { background: var(--superficie); padding: 1.1rem; display: flex; flex-direction: column; gap: .4rem; }
-.pilar .ico { color: var(--acento); display: flex; }
+.pilar .cab { display: flex; align-items: center; gap: .6rem; }
+.pilar .ico {
+  flex: none; width: 34px; height: 34px; border-radius: var(--r-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--acento-vivo); color: var(--acento-ink);
+}
 .pilar .t { font-family: var(--f-display); font-size: 1.12rem; font-weight: 700; }
 .pilar p { font-size: .84rem; color: var(--tinta-2); margin: 0; }
 
@@ -981,4 +1001,41 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
     background-color: rgba(255, 255, 255, .10);
     border-radius: 5px;
   }
+}
+
+/* ============================================================================
+   27. Teléfono: el sitio se aprieta para que quepa sin sentirse cargado
+   ========================================================================== */
+@media (max-width: 760px) {
+  .sitio-cuerpo { padding: 0 1.1rem 2rem; }
+
+  .hero { padding: 1.8rem 0 1.2rem; gap: 1.4rem; }
+  .hero-sello { gap: .7rem; margin-bottom: .8rem; }
+  .hero-sub { font-size: .96rem; margin-bottom: 1.1rem; }
+  .hero-tarjeta { padding: 1rem; }
+
+  /* Cuatro datos nunca dejan un hueco: se acomodan dos y dos. */
+  .hero-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-datos > div { padding: .7rem .8rem; }
+  .hero-datos .v { font-size: 1.32rem; }
+
+  .bloque { padding: 1.7rem 0; }
+  .bloque-tit { font-size: 1.42rem; }
+  .bloque .intro { font-size: .92rem; margin-bottom: 1.1rem; }
+
+  .niveles, .alianzas, .after, .claustro { gap: .8rem; }
+  .nivel-item, .claustro-item, .after-grupo, .pilar { padding: .95rem; }
+  .nivel-item .nom { font-size: 1.18rem; }
+  .alianza { padding: .95rem; gap: .7rem; }
+  .alianza .sigla { width: 44px; height: 44px; font-size: .84rem; }
+
+  /* La tabla de grados se lee mejor de un renglón por grado, aunque haya que
+     deslizarla de lado, que con cada nombre partido en cuatro. */
+  .tabla-grados th, .tabla-grados td { white-space: nowrap; }
+
+  /* En el claustro, las especialidades caben en el perfil: aquí estorban. */
+  .claustro-item .chip { display: none; }
+
+  .sitio-pie { padding: 1.6rem 1.1rem; }
+  .sitio-pie .interior { gap: 1.1rem; }
 }

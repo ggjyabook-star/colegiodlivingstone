@@ -58,6 +58,14 @@ const VistaAlumno = (function () {
 
   function esCorreo(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '')); }
 
+  /* «Aula B-11», pero «Laboratorio 1» y «Aula de idiomas 2» tal cual: el
+     nombre del espacio ya dice qué es. */
+  function espacio(aula) {
+    var t = String(aula || '').trim();
+    if (!t) return 'Por asignar';
+    return /^(aula|lab|salón|salon|taller|centro)/i.test(t) ? t : 'Aula ' + t;
+  }
+
   function horarioLegible(m) {
     if (!m || !m.horario || !m.horario.length) return 'Horario por confirmar';
     return m.horario.map(function (b) {
@@ -470,7 +478,7 @@ const VistaAlumno = (function () {
       '<div class="silencio" style="font-size:.79rem">' +
       U.icono('reloj', 13) + ' ' + U.esc(horarioLegible(m)) + '</div>' +
       '<div class="silencio" style="font-size:.79rem">' +
-      U.icono('pin', 13) + ' Aula ' + U.esc(m.aula) + '</div>' +
+      U.icono('pin', 13) + ' ' + U.esc(espacio(m.aula)) + '</div>' +
       '<div class="separador" style="margin:.4rem 0"></div>' +
       '<div class="entre gap-1">' +
       '<span class="etiqueta">Promedio</span>' +
@@ -548,7 +556,7 @@ const VistaAlumno = (function () {
           '<p class="silencio mt-1" style="font-size:.88rem;max-width:62ch">' + U.esc(m.descripcion) + '</p>' +
           '<div class="fila envuelve gap-1 mt-1">' +
           '<span class="chip">' + U.icono('reloj', 13) + ' ' + U.esc(horarioLegible(m)) + '</span>' +
-          '<span class="chip">' + U.icono('pin', 13) + ' Aula ' + U.esc(m.aula) + '</span>' +
+          '<span class="chip">' + U.icono('pin', 13) + ' ' + U.esc(espacio(m.aula)) + '</span>' +
           '<span class="chip">' + U.icono('birrete', 13) + ' ' + m.creditos + ' créditos</span>' +
           '</div></div>' +
           '<div class="caja-suave" style="min-width:250px">' +

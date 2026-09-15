@@ -340,8 +340,10 @@ const VistaPublica = (function () {
           ${(e.pilares || []).map(function (p) {
             return `
             <article class="pilar">
-              <span class="ico">${U.icono(p.icono, 22)}</span>
-              <div class="t">${U.esc(p.titulo)}</div>
+              <div class="cab">
+                <span class="ico">${U.icono(p.icono, 19)}</span>
+                <div class="t">${U.esc(p.titulo)}</div>
+              </div>
               <p>${U.esc(p.texto)}</p>
             </article>`;
           }).join('')}
@@ -393,7 +395,7 @@ const VistaPublica = (function () {
         <div class="panel">
           <div class="panel-cuerpo sin-relleno">
             <div class="tabla-envoltura">
-              <table class="tabla">
+              <table class="tabla tabla-grados">
                 <thead>
                   <tr>
                     <th>Grado</th><th>Titular</th><th>Materias del plan</th>
@@ -415,7 +417,8 @@ const VistaPublica = (function () {
                           U.attr({ 'data-args': { id: tutor.id } }) + '>' + U.esc(tutor.nombre) + '</button>'
                         : '<span class="silencio">Por asignar</span>'}</td>
                       <td class="silencio" style="font-size:.82rem">
-                        ${mats.map(function (m) { return U.esc(m.nombre); }).join(' · ')}
+                        <span class="solo-ancho">${mats.map(function (m) { return U.esc(m.nombre); }).join(' · ')}</span>
+                        <span class="solo-angosto">${plural(mats.length, 'materia', 'materias')}</span>
                       </td>
                       <td class="num mono">${U.esc(g.aula)}</td>
                     </tr>`;

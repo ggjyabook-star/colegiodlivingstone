@@ -372,6 +372,13 @@ const VistaProfesor = (function () {
     return g ? g.corto : 'Sin grado';
   }
 
+  /* El nombre del espacio ya dice qué es cuando empieza por Aula o Laboratorio. */
+  function espacio(aula) {
+    var t = String(aula || '').trim();
+    if (!t) return 'Por asignar';
+    return /^(aula|lab|salón|salon|taller|centro)/i.test(t) ? t : 'Aula ' + t;
+  }
+
   function horarioTexto(m) {
     if (!m.horario || !m.horario.length) return 'Sin horario asignado';
     return m.horario.map(function (b) { return b.dia + ' ' + b.inicio + '–' + b.fin; }).join(' · ');
@@ -696,7 +703,7 @@ const VistaProfesor = (function () {
 
     return U.panel({
       titulo: 'Horario de la materia',
-      sub: 'Aula ' + m.aula + ' · ' + DB.escuela.diasHabiles,
+      sub: espacio(m.aula) + ' · ' + DB.escuela.diasHabiles,
       acciones: '<button type="button" class="btn btn-sm" data-accion="pr:formMateria"' + args({ id: m.id }) +
         '>' + U.icono('lapiz', 15) + ' Editar horario</button>',
       cuerpo: cuerpo + (choques.length
@@ -734,7 +741,7 @@ const VistaProfesor = (function () {
         variante: (Q.promedioGrupo(m.id) || 0) >= 8 ? 'ok' : 'aviso', icono: 'grafica', sub: 'Ponderado por pesos'
       }) + '</div>' +
       '<div class="col-3">' + U.kpi({ etiqueta: 'Evaluaciones', valor: evs.length, sub: 'Suma de pesos ' + sumaPesos(m.id).toFixed(2), icono: 'cheque' }) + '</div>' +
-      '<div class="col-3">' + U.kpi({ etiqueta: 'Créditos', valor: m.creditos, sub: 'Aula ' + esc(m.aula), icono: 'birrete' }) + '</div>' +
+      '<div class="col-3">' + U.kpi({ etiqueta: 'Créditos', valor: m.creditos, sub: esc(espacio(m.aula)), icono: 'birrete' }) + '</div>' +
       '</div>';
 
     return '<div class="contenedor">' +
