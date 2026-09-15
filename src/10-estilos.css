@@ -1047,3 +1047,50 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
   .sitio-pie { padding: 1.6rem 1.1rem; }
   .sitio-pie .interior { gap: 1.1rem; }
 }
+
+/* ============================================================================
+   28. Fotografías del colegio en el sitio público
+   ========================================================================== */
+.foto-banda {
+  position: relative; margin: 0 0 .4rem;
+  border-radius: var(--r-lg); overflow: hidden;
+  border: 1px solid var(--linea); box-shadow: var(--sombra-1);
+}
+.foto-banda-img {
+  width: 100%; height: clamp(190px, 26vw, 300px);
+  object-fit: cover; display: block;
+}
+.foto-banda .pie {
+  position: absolute; inset: auto 0 0 0;
+  padding: 1.4rem 1rem .7rem;
+  color: #FFFFFF; font-size: .78rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: linear-gradient(to top, rgba(15,24,35,.82), rgba(15,24,35,0));
+}
+
+/* La tarjeta de nivel abre con la foto; el relleno se va al cuerpo. */
+.nivel-item { padding: 0; gap: 0; overflow: hidden; }
+.nivel-foto { width: 100%; height: 138px; object-fit: cover; display: block; }
+.nivel-cuerpo {
+  display: flex; flex-direction: column; gap: .55rem;
+  padding: 1.05rem 1.15rem 1.15rem; flex: 1 1 auto;
+}
+
+.after-grupo { padding: 0; overflow: hidden; }
+.after-foto { width: 100%; height: 132px; object-fit: cover; display: block; }
+.after-cuerpo { padding: 1rem 1.1rem 1.1rem; }
+
+.viaje-foto {
+  width: 100%; height: 168px; object-fit: cover; display: block;
+  border-radius: var(--r-md); margin-bottom: .8rem;
+}
+
+@media (max-width: 760px) {
+  .nivel-foto { height: 120px; }
+  .after-foto { height: 118px; }
+  .viaje-foto { height: 140px; }
+  /* El relleno de teléfono se aplica al cuerpo, no a la tarjeta con foto. */
+  .nivel-item, .after-grupo { padding: 0; }
+  .nivel-cuerpo { padding: .95rem; }
+  .after-cuerpo { padding: .95rem; }
+}

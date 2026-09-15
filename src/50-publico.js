@@ -104,6 +104,15 @@ const VistaPublica = (function () {
       '<span style="font-size:.85rem">' + U.esc(texto) + '</span></div>';
   }
 
+  /* Una foto del colegio, si está declarada para esa clave. Si no, nada:
+     el bloque se dibuja igual sin ella. */
+  function foto(clave, clase, alto) {
+    var f = (typeof FOTOS === 'object' && FOTOS) ? FOTOS[clave] : null;
+    if (!f || !f.archivo) return '';
+    return '<img class="' + clase + '" src="' + U.esc(f.archivo) + '" alt="' + U.esc(f.alt || '') + '"' +
+      (alto ? ' style="height:' + alto + '"' : '') + ' loading="lazy" decoding="async">';
+  }
+
   function enlaceAncla(id, texto, clase, estilo) {
     return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
       ' data-accion="pub:ancla" ' + U.attr({ 'data-args': { id: id } }) + '>' +
@@ -277,6 +286,14 @@ const VistaPublica = (function () {
       </section>`;
   }
 
+  /* La franja de vida escolar: lo primero que se ve del colegio de verdad. */
+  function bandaVida() {
+    var f = (typeof FOTOS === 'object' && FOTOS) ? FOTOS.vida : null;
+    if (!f || !f.archivo) return '';
+    return '<figure class="foto-banda">' + foto('vida', 'foto-banda-img') +
+      (f.pie ? '<figcaption class="pie">' + U.esc(f.pie) + '</figcaption>' : '') + '</figure>';
+  }
+
   function bloqueColegio() {
     var e = DB.escuela;
     var d = DB.direccion;
@@ -363,19 +380,22 @@ const VistaPublica = (function () {
     var n = fila.nivel;
     return `
       <article class="nivel-item" style="border-top-color:${U.esc(n.color)}">
-        <div>
-          <div class="edades">${U.esc(n.edades)}</div>
-          <div class="nom">${U.esc(n.nombre)}</div>
-        </div>
+        ${foto(n.id, 'nivel-foto')}
+        <div class="nivel-cuerpo">
+          <div>
+            <div class="edades">${U.esc(n.edades)}</div>
+            <div class="nom">${U.esc(n.nombre)}</div>
+          </div>
         <p class="desc">${U.esc(recortar(n.descripcion, 250))}</p>
         <div class="fila envuelve gap-1">
           ${U.badge(plural(fila.grados, 'grado', 'grados'), 'neutro')}
           ${U.badge(plural(fila.materias, 'materia', 'materias'), 'neutro')}
           ${U.badge(U.moneda(n.colegiatura) + ' al mes', 'marca')}
         </div>
-        <div class="pie">
-          <span class="etiqueta">Certificación</span>
-          <div class="silencio" style="margin-top:.15rem">${U.esc(n.certificacion)}</div>
+          <div class="pie">
+            <span class="etiqueta">Certificación</span>
+            <div class="silencio" style="margin-top:.15rem">${U.esc(n.certificacion)}</div>
+          </div>
         </div>
       </article>`;
   }
@@ -534,10 +554,11 @@ const VistaPublica = (function () {
           Por más de trece años el colegio ha buscado dar experiencias internacionales a sus alumnos.
         </p>
         <div class="rejilla">
-          ${(e.internacional || []).map(function (v) {
+          ${(e.internacional || []).map(function (v, i) {
             return `
             <div class="col-6">
               <div class="tarjeta">
+                ${foto(i === 0 ? 'uk1' : 'uk2', 'viaje-foto')}
                 <div class="fila gap-1 mb-1">
                   <span style="color:var(--acento);display:flex">${U.icono('pin', 17)}</span>
                   <strong>${U.esc(v.lugar)}</strong>
@@ -560,9 +581,12 @@ const VistaPublica = (function () {
           ${(e.afterclass || []).map(function (g) {
             return `
             <article class="after-grupo">
-              <div class="t">${U.icono(g.icono, 18)} ${U.esc(g.grupo)}</div>
-              <div class="fila envuelve gap-1">
-                ${(g.actividades || []).map(function (a) { return U.chip(a); }).join('')}
+              ${foto(g.grupo, 'after-foto')}
+              <div class="after-cuerpo">
+                <div class="t">${U.icono(g.icono, 18)} ${U.esc(g.grupo)}</div>
+                <div class="fila envuelve gap-1">
+                  ${(g.actividades || []).map(function (a) { return U.chip(a); }).join('')}
+                </div>
               </div>
             </article>`;
           }).join('')}
@@ -665,6 +689,7 @@ const VistaPublica = (function () {
         ${navSitio()}
         <div class="sitio-cuerpo">
           ${hero()}
+          ${bandaVida()}
           ${bloqueColegio()}
           ${bloquePropuesta()}
           ${bloqueOferta()}

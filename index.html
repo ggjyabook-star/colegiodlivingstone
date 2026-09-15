@@ -1056,6 +1056,53 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
   .sitio-pie { padding: 1.6rem 1.1rem; }
   .sitio-pie .interior { gap: 1.1rem; }
 }
+
+/* ============================================================================
+   28. Fotografías del colegio en el sitio público
+   ========================================================================== */
+.foto-banda {
+  position: relative; margin: 0 0 .4rem;
+  border-radius: var(--r-lg); overflow: hidden;
+  border: 1px solid var(--linea); box-shadow: var(--sombra-1);
+}
+.foto-banda-img {
+  width: 100%; height: clamp(190px, 26vw, 300px);
+  object-fit: cover; display: block;
+}
+.foto-banda .pie {
+  position: absolute; inset: auto 0 0 0;
+  padding: 1.4rem 1rem .7rem;
+  color: #FFFFFF; font-size: .78rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: linear-gradient(to top, rgba(15,24,35,.82), rgba(15,24,35,0));
+}
+
+/* La tarjeta de nivel abre con la foto; el relleno se va al cuerpo. */
+.nivel-item { padding: 0; gap: 0; overflow: hidden; }
+.nivel-foto { width: 100%; height: 138px; object-fit: cover; display: block; }
+.nivel-cuerpo {
+  display: flex; flex-direction: column; gap: .55rem;
+  padding: 1.05rem 1.15rem 1.15rem; flex: 1 1 auto;
+}
+
+.after-grupo { padding: 0; overflow: hidden; }
+.after-foto { width: 100%; height: 132px; object-fit: cover; display: block; }
+.after-cuerpo { padding: 1rem 1.1rem 1.1rem; }
+
+.viaje-foto {
+  width: 100%; height: 168px; object-fit: cover; display: block;
+  border-radius: var(--r-md); margin-bottom: .8rem;
+}
+
+@media (max-width: 760px) {
+  .nivel-foto { height: 120px; }
+  .after-foto { height: 118px; }
+  .viaje-foto { height: 140px; }
+  /* El relleno de teléfono se aplica al cuerpo, no a la tarjeta con foto. */
+  .nivel-item, .after-grupo { padding: 0; }
+  .nivel-cuerpo { padding: .95rem; }
+  .after-cuerpo { padding: .95rem; }
+}
 </style>
 </head>
 <body>
@@ -2548,6 +2595,59 @@ const SEMILLA = (function construirSemilla() {
     bitacora: bitacora
   };
 })();
+
+/* ===== src/25-fotos.js ===== */
+/* ============================================================================
+   25-fotos.js — Fotografías del colegio que usa el sitio público.
+   Declara: const FOTOS
+   Son archivos de verdad, en la carpeta fotos/ junto a index.html, como en
+   cualquier sitio web: para cambiar una imagen se reemplaza el archivo y ya.
+   Si falta alguna, el sitio se dibuja igual y sólo se queda sin esa foto.
+   ========================================================================== */
+
+const FOTOS = {
+  vida: {
+    archivo: 'fotos/vida-escolar.jpg',
+    alt: 'Alumnas del colegio en una presentación de danza folclórica',
+    pie: 'Danza folclórica · Programa After Class'
+  },
+  'niv-pre': {
+    archivo: 'fotos/preescolar.jpg',
+    alt: 'Salón de preescolar durante una clase con pizarrón digital'
+  },
+  'niv-pri': {
+    archivo: 'fotos/primaria.jpg',
+    alt: 'Dos alumnos de primaria trabajando en su cuaderno'
+  },
+  'niv-sec': {
+    archivo: 'fotos/secundaria.jpg',
+    alt: 'Alumnos de secundaria en una actividad fuera del salón'
+  },
+  'niv-bac': {
+    archivo: 'fotos/bachillerato.jpg',
+    alt: 'Alumnos de bachillerato en las instalaciones del colegio'
+  },
+  'Deportivas': {
+    archivo: 'fotos/after-deportes.jpg',
+    alt: 'Alumno con un balón de basquetbol en el patio del colegio'
+  },
+  'Arte y danza': {
+    archivo: 'fotos/vida-escolar.jpg',
+    alt: 'Alumnas del colegio en una presentación de danza folclórica'
+  },
+  'Culturales': {
+    archivo: 'fotos/after-robotica.jpg',
+    alt: 'Alumna programando un proyecto en el club de robótica'
+  },
+  uk1: {
+    archivo: 'fotos/reino-unido-1.jpg',
+    alt: 'Alumnos del colegio con el estandarte frente al Big Ben, en Londres'
+  },
+  uk2: {
+    archivo: 'fotos/reino-unido-2.jpg',
+    alt: 'Alumnos del colegio durante el viaje académico al Reino Unido'
+  }
+};
 
 /* ===== src/30-store.js ===== */
 /* ============================================================================
@@ -5700,6 +5800,15 @@ const VistaPublica = (function () {
       '<span style="font-size:.85rem">' + U.esc(texto) + '</span></div>';
   }
 
+  /* Una foto del colegio, si está declarada para esa clave. Si no, nada:
+     el bloque se dibuja igual sin ella. */
+  function foto(clave, clase, alto) {
+    var f = (typeof FOTOS === 'object' && FOTOS) ? FOTOS[clave] : null;
+    if (!f || !f.archivo) return '';
+    return '<img class="' + clase + '" src="' + U.esc(f.archivo) + '" alt="' + U.esc(f.alt || '') + '"' +
+      (alto ? ' style="height:' + alto + '"' : '') + ' loading="lazy" decoding="async">';
+  }
+
   function enlaceAncla(id, texto, clase, estilo) {
     return '<button type="button" class="' + clase + '"' + (estilo ? ' style="' + estilo + '"' : '') +
       ' data-accion="pub:ancla" ' + U.attr({ 'data-args': { id: id } }) + '>' +
@@ -5873,6 +5982,14 @@ const VistaPublica = (function () {
       </section>`;
   }
 
+  /* La franja de vida escolar: lo primero que se ve del colegio de verdad. */
+  function bandaVida() {
+    var f = (typeof FOTOS === 'object' && FOTOS) ? FOTOS.vida : null;
+    if (!f || !f.archivo) return '';
+    return '<figure class="foto-banda">' + foto('vida', 'foto-banda-img') +
+      (f.pie ? '<figcaption class="pie">' + U.esc(f.pie) + '</figcaption>' : '') + '</figure>';
+  }
+
   function bloqueColegio() {
     var e = DB.escuela;
     var d = DB.direccion;
@@ -5959,19 +6076,22 @@ const VistaPublica = (function () {
     var n = fila.nivel;
     return `
       <article class="nivel-item" style="border-top-color:${U.esc(n.color)}">
-        <div>
-          <div class="edades">${U.esc(n.edades)}</div>
-          <div class="nom">${U.esc(n.nombre)}</div>
-        </div>
+        ${foto(n.id, 'nivel-foto')}
+        <div class="nivel-cuerpo">
+          <div>
+            <div class="edades">${U.esc(n.edades)}</div>
+            <div class="nom">${U.esc(n.nombre)}</div>
+          </div>
         <p class="desc">${U.esc(recortar(n.descripcion, 250))}</p>
         <div class="fila envuelve gap-1">
           ${U.badge(plural(fila.grados, 'grado', 'grados'), 'neutro')}
           ${U.badge(plural(fila.materias, 'materia', 'materias'), 'neutro')}
           ${U.badge(U.moneda(n.colegiatura) + ' al mes', 'marca')}
         </div>
-        <div class="pie">
-          <span class="etiqueta">Certificación</span>
-          <div class="silencio" style="margin-top:.15rem">${U.esc(n.certificacion)}</div>
+          <div class="pie">
+            <span class="etiqueta">Certificación</span>
+            <div class="silencio" style="margin-top:.15rem">${U.esc(n.certificacion)}</div>
+          </div>
         </div>
       </article>`;
   }
@@ -6130,10 +6250,11 @@ const VistaPublica = (function () {
           Por más de trece años el colegio ha buscado dar experiencias internacionales a sus alumnos.
         </p>
         <div class="rejilla">
-          ${(e.internacional || []).map(function (v) {
+          ${(e.internacional || []).map(function (v, i) {
             return `
             <div class="col-6">
               <div class="tarjeta">
+                ${foto(i === 0 ? 'uk1' : 'uk2', 'viaje-foto')}
                 <div class="fila gap-1 mb-1">
                   <span style="color:var(--acento);display:flex">${U.icono('pin', 17)}</span>
                   <strong>${U.esc(v.lugar)}</strong>
@@ -6156,9 +6277,12 @@ const VistaPublica = (function () {
           ${(e.afterclass || []).map(function (g) {
             return `
             <article class="after-grupo">
-              <div class="t">${U.icono(g.icono, 18)} ${U.esc(g.grupo)}</div>
-              <div class="fila envuelve gap-1">
-                ${(g.actividades || []).map(function (a) { return U.chip(a); }).join('')}
+              ${foto(g.grupo, 'after-foto')}
+              <div class="after-cuerpo">
+                <div class="t">${U.icono(g.icono, 18)} ${U.esc(g.grupo)}</div>
+                <div class="fila envuelve gap-1">
+                  ${(g.actividades || []).map(function (a) { return U.chip(a); }).join('')}
+                </div>
               </div>
             </article>`;
           }).join('')}
@@ -6261,6 +6385,7 @@ const VistaPublica = (function () {
         ${navSitio()}
         <div class="sitio-cuerpo">
           ${hero()}
+          ${bandaVida()}
           ${bloqueColegio()}
           ${bloquePropuesta()}
           ${bloqueOferta()}
