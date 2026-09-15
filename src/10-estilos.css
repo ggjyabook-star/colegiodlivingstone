@@ -742,10 +742,11 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
   cursor: pointer; text-decoration: none;
 }
 .sitio-nav .enlaces a:hover, .sitio-nav .enlaces button:hover { background: var(--superficie); color: var(--tinta); }
+.sitio-nav .enlaces a, .sitio-nav .enlaces button { white-space: nowrap; }
 .sitio-nav .marca .nombre, .sitio-nav .marca .etiqueta { white-space: nowrap; }
-/* Con seis secciones en la barra, las opcionales se van antes de que algo se
-   parta en dos renglones. */
-@media (max-width: 1040px) { .sitio-nav .enlaces .opcional { display: none; } }
+/* Con siete secciones en la barra, las opcionales se van antes de que algo se
+   parta en dos renglones o empuje al botón de acceso fuera de su sitio. */
+@media (max-width: 1140px) { .sitio-nav .enlaces .opcional { display: none; } }
 @media (max-width: 560px) {
   .sitio-nav { padding: .7rem 1rem; }
   .sitio-nav .enlaces { display: none; }

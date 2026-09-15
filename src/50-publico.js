@@ -113,6 +113,15 @@ const VistaPublica = (function () {
       (alto ? ' style="height:' + alto + '"' : '') + ' loading="lazy" decoding="async">';
   }
 
+  /* El dibujo de una nota. Se recorta como una foto: el lienzo es siempre el
+     mismo y `slice` se encarga de rellenar la caja que le toque. */
+  function ilustracion(clave, clase) {
+    var d = (typeof ILUSTRACIONES === 'object' && ILUSTRACIONES) ? ILUSTRACIONES[clave] : null;
+    if (typeof d !== 'string' || !d) return '';
+    return '<svg class="' + clase + '" viewBox="0 0 640 240" ' +
+      'preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">' + d + '</svg>';
+  }
+
   /* Las notas para padres: contenido editorial del sitio, de la más nueva a la
      más vieja. Si el archivo de notas no está, el sitio se dibuja sin ellas. */
   function notas() {
@@ -172,7 +181,7 @@ const VistaPublica = (function () {
             ${enlaceAncla('colegio', 'Conócenos', 'opcional')}
             ${enlaceAncla('oferta', 'Oferta educativa', 'opcional')}
             ${enlaceAncla('claustro', 'Claustro', '')}
-            ${enlaceRuta('#/publico/notas', 'Notas para padres', '')}
+            ${enlaceRuta('#/publico/notas', 'Notas', '')}
             ${enlaceAncla('alianzas', 'Alianzas', 'opcional')}
             ${enlaceAncla('after', 'After Class', 'opcional')}
             ${enlaceAncla('admisiones', 'Informes', 'opcional')}
@@ -639,7 +648,7 @@ const VistaPublica = (function () {
       <button type="button" class="nota-item${destacada ? ' destacada' : ''}" data-accion="pub:nota"
               ${U.attr({ 'data-args': { id: n.id } })}
               aria-label="Leer la nota ${U.esc(n.titulo)}">
-        ${foto(n.foto, 'nota-foto')}
+        ${ilustracion(n.id, 'nota-foto')}
         <div class="nota-cuerpo">
           <div class="nota-tema">${U.icono(n.icono, 13)} ${U.esc(n.tema)}</div>
           <h3 class="nota-tit">${U.esc(n.titulo)}</h3>
@@ -856,7 +865,9 @@ const VistaPublica = (function () {
               <span>${n.lectura} min de lectura</span>
             </div>
 
-            ${n.foto ? '<figure class="nota-portada">' + foto(n.foto, 'nota-portada-img') + '</figure>' : ''}
+            ${ilustracion(n.id, 'nota-portada-img')
+              ? '<figure class="nota-portada">' + ilustracion(n.id, 'nota-portada-img') + '</figure>'
+              : ''}
 
             <div class="nota-texto">
               ${(n.cuerpo || []).map(bloqueDeNota).join('')}

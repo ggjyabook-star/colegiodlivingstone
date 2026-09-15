@@ -19,8 +19,8 @@
    Nada más: el texto se escapa antes de dibujarse.
 
    `autorId` apunta a un profesor (pr-XX) o a la dirección (dir-01), para que
-   la firma lleve al perfil público de quien escribe. `foto` es una clave de
-   FOTOS; si falta, la nota se dibuja igual sin imagen.
+   la firma lleve al perfil público de quien escribe. La imagen de cada nota
+   es el dibujo que ILUSTRACIONES guarda con este mismo `id`.
    ========================================================================== */
 
 const NOTAS = [
@@ -30,7 +30,6 @@ const NOTAS = [
     id: 'habitos-en-casa',
     tema: 'Aprendizaje',
     icono: 'casa',
-    foto: 'niv-pre',
     fecha: '2025-11-04',
     lectura: 7,
     autorId: 'pr-05',
@@ -114,7 +113,6 @@ const NOTAS = [
     id: 'hablar-de-la-colegiatura',
     tema: 'Familia y dinero',
     icono: 'dinero',
-    foto: 'niv-bac',
     fecha: '2025-10-21',
     lectura: 8,
     autorId: 'pr-14',
@@ -200,7 +198,6 @@ const NOTAS = [
     id: 'todos-aprenden-distinto',
     tema: 'Aprendizaje',
     icono: 'identidad',
-    foto: 'niv-pri',
     fecha: '2025-10-07',
     lectura: 7,
     autorId: 'pr-03',
@@ -280,7 +277,6 @@ const NOTAS = [
     id: 'sistema-educativo-mexico',
     tema: 'Para decidir',
     icono: 'birrete',
-    foto: 'niv-sec',
     fecha: '2025-09-16',
     lectura: 9,
     autorId: 'dir-01',
@@ -376,7 +372,6 @@ const NOTAS = [
     id: 'las-tardes-tambien-educan',
     tema: 'Vida escolar',
     icono: 'balon',
-    foto: 'Deportivas',
     fecha: '2025-08-26',
     lectura: 6,
     autorId: 'pr-08',
