@@ -366,6 +366,12 @@ const VistaProfesor = (function () {
     return '<span style="display:inline-block;width:9px;height:9px;border-radius:3px;flex:none;background:' +
       esc(c) + '"></span>';
   }
+  /* El grado al que pertenece un grupo: se pinta igual en toda la vista. */
+  function gradoCorto(gradoId) {
+    var g = Q.grado(gradoId);
+    return g ? g.corto : 'Sin grado';
+  }
+
   function horarioTexto(m) {
     if (!m.horario || !m.horario.length) return 'Sin horario asignado';
     return m.horario.map(function (b) { return b.dia + ' ' + b.inicio + '–' + b.fin; }).join(' · ');
@@ -538,6 +544,7 @@ const VistaProfesor = (function () {
 
     var cuerpo =
       '<div class="fila envuelve gap-1 mb-2">' +
+      '<span class="grado-pin">' + esc(gradoCorto(m.gradoId)) + '</span>' +
       U.chip(m.aula, 'neutro') + U.chip(m.creditos + ' créditos') +
       (archivada ? U.badge('Archivada', 'neutro') : U.badge('Activa', 'ok')) + '</div>' +
       '<p class="d silencio" style="font-size:.82rem;margin-bottom:.7rem">' + esc(horarioTexto(m)) + '</p>' +
@@ -1101,13 +1108,14 @@ const VistaProfesor = (function () {
       var prom = promedioConmigo(p, a.id);
       var asis = asistenciaConmigo(p, a.id);
       var vEst = a.estatus === 'activo' ? 'ok' : (a.estatus === 'condicionado' ? 'aviso' : 'crit');
-      var busca = (a.nombre + ' ' + a.matricula).toLowerCase();
+      var busca = (a.nombre + ' ' + a.matricula + ' ' + gradoCorto(a.gradoId)).toLowerCase();
       return '<tr data-busca="' + esc(busca) + '" style="cursor:pointer" data-accion="pr:expediente"' +
         args({ alumnoId: a.id }) + '>' +
         '<td><div class="fila gap-1">' + U.avatar(a, 'sm') +
         '<div class="crece"><div class="truncar">' + esc(a.nombre) + '</div>' +
         '<div class="silencio truncar" style="font-size:.75rem">' + esc(a.email) + '</div></div></div></td>' +
         '<td class="mono">' + esc(a.matricula) + '</td>' +
+        '<td><span class="grado-pin">' + esc(gradoCorto(a.gradoId)) + '</span></td>' +
         '<td><div class="fila envuelve gap-1">' + ms.map(function (m) {
           return U.chip(m.codigo);
         }).join('') + '</div></td>' +
@@ -1124,7 +1132,7 @@ const VistaProfesor = (function () {
 
     var cuerpo = als.length
       ? '<div class="tabla-envoltura"><table class="tabla" id="pr-tabla-alumnos"><thead><tr>' +
-      '<th>Alumno</th><th>Matrícula</th><th>Materias conmigo</th><th class="num">Promedio</th>' +
+      '<th>Alumno</th><th>Matrícula</th><th>Grado</th><th>Materias conmigo</th><th class="num">Promedio</th>' +
       '<th class="num">Asistencia</th><th>Estatus</th><th></th></tr></thead>' +
       '<tbody>' + filas + '</tbody></table>' +
       '<p class="vacio oculto" id="pr-sin-resultados">Ningún alumno coincide con la búsqueda.</p></div>'
@@ -1384,7 +1392,7 @@ const VistaProfesor = (function () {
       '<div class="dato"><span class="e">Correo</span><span class="v">' + esc(p.email) + '</span></div>' +
       '<div class="dato"><span class="e">Teléfono</span><span class="v">' + esc(p.telefono) + '</span></div>' +
       '<div class="dato"><span class="e">Oficina</span><span class="v">' + esc(p.oficina) + '</span></div>' +
-      '<div class="dato"><span class="e">En Altamira desde</span><span class="v">' + U.fecha(p.ingreso, 'mes') + '</span></div>' +
+      '<div class="dato"><span class="e">En el colegio desde</span><span class="v">' + U.fecha(p.ingreso, 'mes') + '</span></div>' +
       '</div>' +
       '<div class="fila envuelve gap-1 mt-2">' +
       '<button type="button" class="btn btn-suave" data-accion="pr:ir"' + args({ ruta: '#/publico/profesor?id=' + p.id }) + '>' +
@@ -1492,9 +1500,16 @@ const VistaProfesor = (function () {
         ok: esNueva ? 'Crear materia' : 'Guardar cambios',
         cuerpo:
           campo({ nombre: 'nombre', etiqueta: 'Nombre de la materia', valor: base.nombre, req: true, col: 8, ph: 'Cálculo Diferencial' }) +
-          campo({ nombre: 'codigo', etiqueta: 'Código', valor: base.codigo, req: true, col: 4, ph: 'MAT-210' }) +
+          campo({ nombre: 'codigo', etiqueta: 'Código', valor: base.codigo, req: true, col: 4, ph: 'MAT-B3' }) +
+          campo({
+            tipo: 'selec', nombre: 'gradoId', etiqueta: 'Grado escolar', valor: base.gradoId, req: true, col: 4,
+            ayuda: 'La materia entra al plan de ese grado y se inscribe todo el grupo.',
+            opciones: (Q.grados() || []).map(function (g) {
+              return { v: g.id, t: g.etiqueta + ' · grupo ' + g.grupo };
+            })
+          }) +
           campo({ tipo: 'number', nombre: 'creditos', etiqueta: 'Créditos', valor: base.creditos, min: 1, max: 20, paso: 1, req: true, col: 4 }) +
-          campo({ nombre: 'aula', etiqueta: 'Aula', valor: base.aula, req: true, col: 4, ph: 'B-204' }) +
+          campo({ nombre: 'aula', etiqueta: 'Aula', valor: base.aula, req: true, col: 4, ph: 'S-21' }) +
           campo({ tipo: 'number', nombre: 'cupo', etiqueta: 'Cupo', valor: base.cupo, min: 1, max: 60, paso: 1, req: true, col: 4 }) +
           campo({
             tipo: 'area', nombre: 'descripcion', etiqueta: 'Descripción', valor: base.descripcion, col: 12, filas: 3,
@@ -1670,7 +1685,7 @@ const VistaProfesor = (function () {
         accion: 'pr:agregarExperiencia', ok: 'Agregar',
         cuerpo:
           campo({ nombre: 'puesto', etiqueta: 'Puesto', req: true, col: 12, ph: 'Coordinador del área de exactas' }) +
-          campo({ nombre: 'lugar', etiqueta: 'Lugar', req: true, col: 6, ph: 'Colegio Altamira' }) +
+          campo({ nombre: 'lugar', etiqueta: 'Lugar', req: true, col: 6, ph: 'The Livingstone' }) +
           campo({ nombre: 'periodo', etiqueta: 'Periodo', req: true, col: 6, ph: '2019 – actual' }) +
           campo({ tipo: 'area', nombre: 'detalle', etiqueta: 'Detalle', col: 12, filas: 3, ph: 'Qué hiciste ahí.' })
       })
@@ -1731,9 +1746,11 @@ const VistaProfesor = (function () {
       var choque = horario.filter(function (b) { return b.inicio >= b.fin; }).length > 0;
       if (choque) { U.toast('La hora de inicio debe ser anterior a la de término.', 'crit'); return; }
 
+      if (!Q.grado(d.gradoId)) { U.toast('Elige el grado escolar de la materia.', 'crit'); return; }
+
       var datos = {
-        nombre: nombre, codigo: codigo, creditos: creditos, aula: (d.aula || '').trim(),
-        cupo: cupo, descripcion: (d.descripcion || '').trim(),
+        nombre: nombre, codigo: codigo, gradoId: d.gradoId, creditos: creditos,
+        aula: (d.aula || '').trim(), cupo: cupo, descripcion: (d.descripcion || '').trim(),
         color: d.color || paleta()[0], horario: horario, profesorId: p.id
       };
       var r;

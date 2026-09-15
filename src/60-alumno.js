@@ -146,6 +146,13 @@ const VistaAlumno = (function () {
       'border-radius:3px;flex:none;background:' + U.esc(m.color) + '"></span>';
   }
 
+  /* Quién responde por el grupo del alumno. */
+  function tituloTutor(a) {
+    var g = Q.grado(a.gradoId);
+    var t = g ? Q.profesor(g.tutorId) : null;
+    return t ? t.nombre : 'Por asignar';
+  }
+
   function dato(etiqueta, valor, mono) {
     return '<div class="dato"><span class="e">' + U.esc(etiqueta) + '</span>' +
       '<span class="v' + (mono ? ' mono' : '') + '">' + valor + '</span></div>';
@@ -191,7 +198,7 @@ const VistaAlumno = (function () {
       (alta ? U.badge('Prioridad alta', 'crit') : U.badge('Informativo', 'neutro')) +
       '</div>' +
       '<div class="silencio" style="font-size:.79rem">' +
-      U.esc(ambito) + ' · ' + U.esc(autor ? autor.nombre : 'Colegio Altamira') +
+      U.esc(ambito) + ' · ' + U.esc(autor ? autor.nombre : DB.escuela.nombre) +
       ' · ' + U.fecha(av.fecha, 'relativa') + '</div>' +
       '<p class="mt-1" style="font-size:.87rem">' + U.esc(av.cuerpo) + '</p>' +
       '</div></div>';
@@ -345,6 +352,9 @@ const VistaAlumno = (function () {
 
   function seccionResumen(a) {
     var mats = Q.materiasDeAlumno(a.id);
+    var grado = Q.grado(a.gradoId);
+    var nivel = Q.nivelDeAlumno(a.id);
+    var tutor = grado ? Q.profesor(grado.tutorId) : null;
     var prom = Q.promedioGeneral(a.id);
     var asis = Q.asistencia(a.id);
     var ad = Q.adeudo(a.id);
@@ -367,10 +377,10 @@ const VistaAlumno = (function () {
         pie: 'Contadas en todas tus materias'
       }) + '</div>' +
       '<div class="col-3">' + U.kpi({
-        etiqueta: 'Créditos inscritos', icono: 'libro',
-        valor: String(creditos), variante: 'marca',
-        sub: 'Ciclo ' + U.esc(DB.escuela.ciclo),
-        pie: 'Carga completa del periodo'
+        etiqueta: 'Grado escolar', icono: 'birrete',
+        valor: grado ? grado.numero + 'º' : '—', variante: 'marca',
+        sub: grado ? (nivel ? nivel.nombre : '') + ' · grupo ' + grado.grupo : 'Sin grado asignado',
+        pie: mats.length + ' materias · ' + creditos + ' créditos del ciclo'
       }) + '</div>' +
       '<div class="col-3">' + U.kpi({
         etiqueta: 'Estado de cuenta', icono: 'tarjeta',
@@ -1081,6 +1091,9 @@ const VistaAlumno = (function () {
         '<div class="datos-rejilla">' +
         dato('Matrícula', U.esc(a.matricula), true) +
         dato('Nombre completo', U.esc(a.nombre)) +
+        dato('Grado escolar', U.esc(Q.etiquetaGrado(a.gradoId))) +
+        dato('Titular del grupo', U.esc(tituloTutor(a))) +
+        dato('Colegiatura mensual', U.moneda(Q.colegiaturaDe(a.id)), true) +
         dato('Correo institucional', U.esc(a.email)) +
         dato('Teléfono', U.esc(a.telefono), true) +
         dato('Fecha de nacimiento', U.fecha(a.nacimiento, 'larga')) +

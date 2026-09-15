@@ -15,7 +15,7 @@ const Acciones = {};
   var ZONAS = ['publico', 'acceso', 'alumno', 'profesor', 'direccion'];
   var PANELES = { alumno: true, profesor: true, direccion: true };
   var ROL_LEGIBLE = { alumno: 'Estudiante', profesor: 'Docente', direccion: 'Dirección' };
-  var LLAVE_TEMA = 'altamira.tema';
+  var LLAVE_TEMA = 'livingstone.tema';
 
   var VISTAS = {};          // se arma en el arranque
   var menuAbierto = false;  // cajón del riel en pantallas angostas
@@ -352,6 +352,11 @@ const Acciones = {};
 
   function rolLegible(ctx) {
     if (ctx.zona === 'direccion' && ctx.persona && ctx.persona.cargo) return ctx.persona.cargo;
+    /* Al alumno le sirve más ver su grado que la palabra «estudiante». */
+    if (ctx.zona === 'alumno' && ctx.persona) {
+      var g = intentar(function () { return Q.grado(ctx.persona.gradoId); }, null);
+      if (g) return g.etiqueta + ' · grupo ' + g.grupo;
+    }
     return ROL_LEGIBLE[ctx.rol] || '';
   }
 
@@ -402,11 +407,28 @@ const Acciones = {};
       return tarjetaCuenta('profesor', p, detalleProfesor(p));
     });
 
-    var deAlumnos = DB.alumnos.map(function (a) {
-      return tarjetaCuenta('alumno', a, detalleAlumno(a));
+    /* Los alumnos se agrupan por nivel: son dos por grado y de otro modo la
+       lista se vuelve un muro de cuarenta tarjetas iguales. */
+    var porNivel = intentar(function () { return Q.niveles(); }, []).map(function (n) {
+      var grados = {};
+      intentar(function () { return Q.grados(n.id); }, []).forEach(function (g) { grados[g.id] = true; });
+      var suyos = DB.alumnos.filter(function (a) { return grados[a.gradoId]; });
+      return {
+        titulo: n.nombre,
+        tarjetas: suyos.map(function (a) { return tarjetaCuenta('alumno', a, detalleAlumno(a)); })
+      };
     });
+    var sueltos = DB.alumnos.filter(function (a) {
+      return !intentar(function () { return Q.grado(a.gradoId); }, null);
+    });
+    if (sueltos.length) {
+      porNivel.push({
+        titulo: 'Sin grado asignado',
+        tarjetas: sueltos.map(function (a) { return tarjetaCuenta('alumno', a, detalleAlumno(a)); })
+      });
+    }
 
-    var total = deDireccion.length + deProfesores.length + deAlumnos.length;
+    var total = deDireccion.length + deProfesores.length + DB.alumnos.length;
 
     return '<div class="acceso">' +
         '<div class="acceso-interior">' +
@@ -437,7 +459,11 @@ const Acciones = {};
 
           grupoCuentas('Dirección', deDireccion) +
           grupoCuentas('Profesores', deProfesores) +
-          grupoCuentas('Alumnos', deAlumnos) +
+          '<div class="separador"></div>' +
+          '<h2 class="destacado mb-1" style="font-size:1.25rem">Alumnos por grado</h2>' +
+          '<p class="silencio mb-2" style="font-size:.85rem">Dos alumnos de muestra en cada grado, ' +
+          'de 1º de preescolar a 3º de bachillerato, con situaciones distintas a propósito.</p>' +
+          porNivel.map(function (g) { return grupoCuentas(g.titulo, g.tarjetas); }).join('') +
 
           '<div class="separador"></div>' +
           '<div class="fila envuelve gap-1">' +
@@ -472,20 +498,24 @@ const Acciones = {};
 
   function detalleProfesor(p) {
     var materias = intentar(function () { return Q.materiasDeProfesor(p.id) || []; }, []);
-    var nombres = materias.map(function (m) { return m.nombre; }).join(' · ');
+    var grados = intentar(function () { return Q.gradosDeProfesor(p.id) || []; }, []);
     return {
       a: 'Clave ' + U.esc(p.clave) + ' · ' + materias.length + (materias.length === 1 ? ' materia' : ' materias'),
-      b: nombres ? U.esc(nombres) : 'Sin materias asignadas'
+      b: grados.length
+        ? U.esc(grados.map(function (g) { return g.corto; }).join(' · '))
+        : 'Sin grupos asignados'
     };
   }
 
   function detalleAlumno(a) {
     var promedio = intentar(function () { return Q.promedioGeneral(a.id); }, null);
+    var grado = intentar(function () { return Q.grado(a.gradoId); }, null);
     return {
-      a: 'Matrícula ' + U.esc(a.matricula) + ' · Promedio ' + U.notaTexto(promedio),
-      b: (a.estatus && a.estatus !== 'activo')
-        ? U.badge(capitalizar(a.estatus), a.estatus === 'baja' ? 'crit' : 'aviso')
-        : ''
+      a: (grado ? U.esc(grado.etiqueta) : 'Sin grado') + ' · Promedio ' + U.notaTexto(promedio),
+      b: '<span class="mono">' + U.esc(a.matricula) + '</span>' +
+        ((a.estatus && a.estatus !== 'activo')
+          ? ' ' + U.badge(capitalizar(a.estatus), a.estatus === 'baja' ? 'crit' : 'aviso')
+          : '')
     };
   }
 

@@ -1,4 +1,4 @@
-# CONTRATO — Colegio Altamira (demo escolar)
+# CONTRATO — The Livingstone (demo escolar)
 
 App de una sola página, **sin frameworks, sin build, sin imports**. Todos los archivos de `src/`
 se concatenan **en orden numérico** dentro de un único `<script>`. Por lo tanto:
@@ -6,14 +6,17 @@ se concatenan **en orden numérico** dentro de un único `<script>`. Por lo tant
 - Cada archivo declara sus cosas con `var`/`function`/`const` en el **ámbito global compartido**.
 - **Prohibido** `import`, `export`, `require`, `module.`, `<script src>`, `fetch()`, red de cualquier tipo.
 - **Prohibido** redeclarar un `const` que ya declaró otro archivo. Cada archivo declara SOLO lo que le toca.
-- Español de México en toda la interfaz. Moneda MXN. Sin niveles ni grados (nada de "primaria/secundaria/preparatoria").
+- Español de México en toda la interfaz. Moneda MXN.
+- El colegio va de preescolar a bachillerato: **4 niveles y 15 grados**, con dos alumnos de muestra
+  por grado. Todo alumno tiene `gradoId` y toda materia pertenece a un grado.
 - Todo el estado vive en `DB` y se persiste en `localStorage`.
 
 ## Orden de concatenación
 
 | archivo | declara | quién |
 |---|---|---|
-| `src/10-estilos.css` | CSS (tokens + componentes) | ya existe |
+| `src/05-icono.html` | icono de la pestaña (escudo en base64) | ya existe |
+| `src/10-estilos.css` | CSS (tokens + escudo embebido + componentes) | ya existe |
 | `src/20-datos.js` | `const SEMILLA` | ya existe |
 | `src/30-store.js` | `var DB`, `const HOY`, `const Store`, `const Sesion`, `const Q`, `const M` | agente |
 | `src/40-ui.js` | `const U`, `const ICONOS` | agente |
@@ -29,16 +32,22 @@ se concatenan **en orden numérico** dentro de un único `<script>`. Por lo tant
 
 ```js
 DB = {
-  version: 3,
+  version: 4,
   contador: 100,   // lo usa Store.uid
   escuela: {
     nombre, lema, ciclo, fundacion, direccion, ciudad, telefono, email, sitio,
     colegiaturaMensual, moneda, horarioAtencion, acercaDe, mision, sello,
-    diasHabiles, recargoPct
+    diasHabiles, recargoPct,
+    nombreLargo, telefono2, whatsapp, buzon, vision, excelencia, cita:{texto,autor},
+    valores:[String], indicadores:[{valor,etiqueta}], pilares:[{icono,titulo,texto}],
+    alianzas:[{nombre,sigla,texto}], afterclass:[{grupo,icono,actividades:[String]}],
+    afterclassTexto, internacional:[{lugar,detalle}], redes:[{nombre,usuario}]
   },
+  niveles: [{ id, nombre, orden, color, edades, colegiatura, inscripcion, certificacion, descripcion }],
+  grados:  [{ id, nivelId, numero, etiqueta, corto, grupo, aula, cupo, tutorId, nacimiento }],
   direccion: { id:'dir-01', rol:'direccion', nombre, cargo, email, telefono, foto, iniciales, color, desde, bio },
   alumnos: [{
-    id, rol:'alumno', matricula, nombre, email, foto, iniciales, color, nacimiento, telefono,
+    id, rol:'alumno', matricula, nombre, gradoId, email, foto, iniciales, color, nacimiento, telefono,
     tutor:{nombre,parentesco,telefono,email}, ingreso, estatus:'activo'|'condicionado'|'baja',
     becaPct, notas
   }],
@@ -49,7 +58,7 @@ DB = {
     cv:{nombre,tamano,actualizado,url}|null, perfilPublico:Boolean, ingreso, estatus
   }],
   materias: [{
-    id, codigo, nombre, profesorId, creditos, aula, cupo,
+    id, codigo, nombre, gradoId, nivelId, profesorId, creditos, aula, cupo, sesiones, area,
     horario:[{dia,inicio,fin}], descripcion, color, estatus:'activa'|'archivada'
   }],
   inscripciones: [{ id, alumnoId, materiaId }],
@@ -74,7 +83,7 @@ suma(valor × peso) / suma(peso) **solo** sobre evaluaciones ya calificadas para
 ## 2. `Store` (30-store.js)
 
 ```js
-Store.cargar()           // lee localStorage 'altamira.db.v3'; si no hay o cambia version, clona SEMILLA
+Store.cargar()           // lee localStorage 'livingstone.db.v4'; si no hay o cambia version, clona SEMILLA
 Store.guardar()          // persiste DB en try/catch y notifica suscriptores
 Store.reiniciar()        // borra y re-siembra desde SEMILLA, cierra sesión
 Store.suscribir(fn)
@@ -85,7 +94,7 @@ Store.bitacora(texto)    // agrega entrada usando el actor de la sesión
 ## 3. `Sesion` (30-store.js)
 
 ```js
-Sesion.actual()   // {rol, id} | null  (persiste en localStorage 'altamira.sesion')
+Sesion.actual()   // {rol, id} | null  (persiste en localStorage 'livingstone.sesion')
 Sesion.entrar(rol, id)
 Sesion.salir()
 Sesion.persona()  // objeto alumno/profesor/direccion de la sesión, o null
@@ -95,6 +104,18 @@ Sesion.persona()  // objeto alumno/profesor/direccion de la sesión, o null
 
 ```js
 Q.alumno(id)  Q.profesor(id)  Q.materia(id)  Q.evaluacion(id)  Q.tarea(id)  Q.persona(rol,id)
+
+Q.nivel(id)  Q.grado(id)
+Q.niveles()                           -> [nivel] en orden escolar
+Q.grados(nivelId)                     -> [grado] en orden escolar (nivelId opcional)
+Q.gradoDeAlumno(id)  Q.nivelDeGrado(gradoId)  Q.nivelDeAlumno(id)
+Q.etiquetaGrado(gradoId)              -> '4º de Primaria · grupo A'
+Q.alumnosDeGrado(gradoId)             -> [alumno]
+Q.materiasDeGrado(gradoId)            -> [materia] activas
+Q.gradosDeProfesor(profesorId)        -> [grado] donde imparte
+Q.resumenGrado(gradoId)               -> {grado, nivel, tutor, alumnos, materias, promedio, asistencia}
+Q.resumenNiveles()                    -> [{nivel, grados, alumnos, materias, promedio, asistencia}]
+Q.colegiaturaDe(alumnoId)             -> Number  (cuota del nivel con su beca aplicada)
 Q.materiasDeAlumno(alumnoId)          -> [materia]
 Q.materiasDeProfesor(profesorId)      -> [materia]
 Q.alumnosDeMateria(materiaId)         -> [alumno]
@@ -115,7 +136,7 @@ Q.resenasDeProfesor(profesorId, estado)-> [resena]
 Q.ratingProfesor(profesorId, soloPublicas) -> {promedio, total, distribucion:[c1,c2,c3,c4,c5], criterios:{claridad,dominio,trato,puntualidad}}
 Q.resenaDe(alumnoId, profesorId)      -> resena | null
 Q.rendimientoPorParcial(alumnoId)     -> [{etiqueta, valor}]  serie de tendencia
-Q.kpisEscuela()                       -> {alumnos, profesores, materias, promedioGeneral, asistencia, cobrado, porCobrar, vencido, cumplimientoPct}
+Q.kpisEscuela()                       -> {alumnos, profesores, materias, grados, niveles, promedioGeneral, asistencia, cobrado, porCobrar, vencido, cumplimientoPct}
 Q.ingresosPorMes()                    -> [{etiqueta, cobrado, esperado}]
 Q.riesgo()                            -> [{alumno, motivo, severidad}]
 Q.diasParaEntrega(iso)                -> Number (negativo = atrasado), contra HOY
@@ -130,8 +151,13 @@ la demo sea determinista. Todo cálculo relativo usa `HOY`.
 M.guardarNota(alumnoId, evaluacionId, valor)   // '' o null borra la nota; valida 0..10
 M.crearEvaluacion(materiaId, datos) / M.actualizarEvaluacion(id, datos) / M.eliminarEvaluacion(id)
 M.crearMateria(datos) / M.actualizarMateria(id, datos) / M.archivarMateria(id)
+  // datos.gradoId es obligatorio al crear: la materia entra al plan del grado
+  // y se inscribe a todo el grupo
 M.inscribir(alumnoId, materiaId) / M.desinscribir(alumnoId, materiaId)
 M.crearAlumno(datos) / M.actualizarAlumno(id, datos) / M.cambiarEstatusAlumno(id, estatus)
+  // datos.gradoId es obligatorio al crear. Al crear, y al cambiar de grado, el
+  // alumno queda inscrito exactamente en el plan de estudios de su grado, con
+  // su asistencia y sus entregas pendientes al día
 M.crearProfesor(datos) / M.actualizarProfesor(id, datos)
 M.actualizarPerfilProfesor(id, datos)
 M.subirFoto(rol, id, dataUrl)
@@ -141,7 +167,8 @@ M.marcarEntrega(tareaId, alumnoId, estado, calificacion)
 M.subirMaterial(materiaId, datos) / M.eliminarMaterial(id)
 M.publicarAviso(datos)
 M.registrarPago(pagoId, datos)                 // datos = {metodo, referencia}; marca pagado con HOY
-M.generarColegiaturas(periodo)                 // pago pendiente del periodo a cada alumno activo
+M.generarColegiaturas(periodo)                 // pago pendiente del periodo a cada alumno activo,
+                                               // con la cuota de su nivel y su beca aplicada
 M.crearResena(datos)                           // nace 'pendiente'
 M.moderarResena(id, estado)                    // 'publica' | 'oculta'
 M.responderResena(id, texto)
@@ -229,8 +256,9 @@ const VistaAlumno = {
 ## 8. Cascarón (90-app.js)
 
 - **Sitio público** (`#/publico`): sin riel; encabezado `.sitio-nav` y pie propios.
-- **Acceso** (`#/acceso`): tarjetas de las 8 cuentas demo agrupadas por rol; clic = entrar, sin contraseña,
-  con nota visible de que es una demostración. Enlace de regreso al sitio.
+- **Acceso** (`#/acceso`): tarjetas de las 45 cuentas demo; dirección y profesores agrupados por rol, y
+  los alumnos agrupados por nivel escolar. Clic = entrar, sin contraseña, con nota visible de que es una
+  demostración. Enlace de regreso al sitio.
 - **App con sesión**: `.shell` = `.riel` (fijo: sello, nav, persona, salir) + `.principal`
   (`.topbar` + `.contenido`). En < 900 px el riel es cajón deslizable con botón `menu` en la topbar.
 - Sin sesión y ruta de panel → `#/acceso`. Sesión de otro rol → redirige a su panel.
@@ -255,7 +283,10 @@ Elementos: `.btn .btn-primario .btn-suave .btn-fantasma .btn-peligro .btn-sm .bt
 .migas .etiqueta .silencio .destacado .sello .cinta`
 
 Sitio público: `.sitio .sitio-nav .hero .hero-sello .hero-tit .hero-sub .hero-datos .bloque
-.bloque-tit .claustro .claustro-item .oferta .oferta-item .sitio-pie .cita`
+.bloque-tit .claustro .claustro-item .oferta .oferta-item .sitio-pie .cita
+.niveles .nivel-item .pilares .pilar .alianzas .alianza .after .after-grupo .tira-valores`
+
+Grado escolar: `.grado-pin` — la insignia con el grado se pinta igual en tablas, fichas y expedientes.
 
 Utilidades: `.oculto .txt-c .txt-d .mt-0 .mt-1 .mt-2 .mt-3 .mb-0 .mb-1 .mb-2 .mb-3
 .gap-1 .gap-2 .gap-3 .ancho-total .nowrap .truncar`
@@ -264,7 +295,7 @@ Utilidades: `.oculto .txt-c .txt-d .mt-0 .mt-1 .mt-2 .mt-3 .mb-0 .mb-1 .mb-2 .mb
 `var(--token)` — nunca un color literal.
 
 Tokens: `--fondo --superficie --superficie-2 --superficie-3 --tinta --tinta-2 --tinta-3 --linea
---linea-fuerte --marca --marca-ink --marca-suave --marca-contraste --acento --acento-suave
+--linea-fuerte --marca --marca-ink --marca-suave --marca-contraste --acento --acento-suave --estrella
 --ok --ok-suave --aviso --aviso-suave --crit --crit-suave --info --info-suave
 --sombra-1 --sombra-2 --r-sm --r-md --r-lg --r-full --serie-1 … --serie-6`
 

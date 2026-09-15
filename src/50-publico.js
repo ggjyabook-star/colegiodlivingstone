@@ -1,5 +1,5 @@
 /* ============================================================================
-   50-publico.js — Sitio público del Colegio Altamira.
+   50-publico.js — Sitio público de The Livingstone.
    Declara: const VistaPublica
    Portada (#/publico) y perfil docente público (#/publico/profesor?id=pr-01).
    No usa riel: dibuja su propia barra superior y su propio pie.
@@ -57,21 +57,7 @@ const VistaPublica = (function () {
     return DB.alumnos.filter(function (a) { return a.estatus !== 'baja'; });
   }
 
-  /* Promedio del colegio: promedio de los promedios generales de cada alumno. */
-  function promedioColegio() {
-    var suma = 0, n = 0;
-    alumnosInscritos().forEach(function (a) {
-      var p = Q.promedioGeneral(a.id);
-      if (typeof p === 'number' && isFinite(p)) { suma += p; n += 1; }
-    });
-    return n ? Math.round((suma / n) * 10) / 10 : null;
-  }
-
   function anosDeTrayectoria() { return HOY.getFullYear() - DB.escuela.fundacion; }
-
-  function diasDe(m) {
-    return (m.horario || []).map(function (h) { return h.dia; }).join(' · ');
-  }
 
   function horarioLegible(m) {
     return (m.horario || []).map(function (h) { return h.dia + ' ' + h.inicio + '–' + h.fin; }).join(' · ');
@@ -92,15 +78,6 @@ const VistaPublica = (function () {
         puntualidad: typeof c.puntualidad === 'number' ? c.puntualidad : 0
       }
     };
-  }
-
-  /* La inscripción sale del cobro real más alto registrado (sin descuento). */
-  function costoInscripcion() {
-    var montos = DB.pagos
-      .filter(function (p) { return String(p.concepto).indexOf('Inscripción') === 0; })
-      .map(function (p) { return p.monto; });
-    if (!montos.length) return DB.escuela.colegiaturaMensual * 2;
-    return Math.max.apply(null, montos);
   }
 
   function becas() {
@@ -141,15 +118,17 @@ const VistaPublica = (function () {
           <span class="sello">${U.esc(e.sello)}</span>
           <span>
             <span class="nombre">${U.esc(e.nombre)}</span>
-            <span class="etiqueta" style="display:block">Ciclo ${U.esc(e.ciclo)}</span>
+            <span class="etiqueta lema">${U.esc(e.lema)}</span>
           </span>
         </button>
         <div class="fila gap-1">
           <nav class="enlaces" aria-label="Secciones del sitio">
-            ${enlaceAncla('sobre', 'El colegio', 'opcional')}
-            ${enlaceAncla('oferta', 'Oferta', 'opcional')}
+            ${enlaceAncla('colegio', 'Conócenos', 'opcional')}
+            ${enlaceAncla('oferta', 'Oferta educativa', 'opcional')}
             ${enlaceAncla('claustro', 'Claustro', '')}
-            ${enlaceAncla('admisiones', 'Admisiones', 'opcional')}
+            ${enlaceAncla('alianzas', 'Alianzas', 'opcional')}
+            ${enlaceAncla('after', 'After Class', 'opcional')}
+            ${enlaceAncla('admisiones', 'Informes', 'opcional')}
           </nav>
           <button type="button" class="btn btn-primario btn-sm" data-accion="pub:acceder">
             ${U.icono('candado', 15)} Acceder al portal
@@ -160,35 +139,26 @@ const VistaPublica = (function () {
 
   function pieSitio() {
     var e = DB.escuela;
-    var docentes = profesoresPublicos();
     return `
       <footer class="sitio-pie">
         <div class="interior">
           <div>
             <div class="fila gap-1 mb-1">
               <span class="sello">${U.esc(e.sello)}</span>
-              <span class="destacado" style="font-weight:600;font-size:1.02rem">${U.esc(e.nombre)}</span>
+              <span class="destacado" style="font-weight:700;font-size:1.1rem">${U.esc(e.nombre)}</span>
             </div>
             <p>${U.esc(e.lema)}</p>
-            <p class="silencio">Ciclo escolar ${U.esc(e.ciclo)}</p>
+            <p class="silencio">Ciclo escolar ${U.esc(e.ciclo)} · desde ${e.fundacion}</p>
           </div>
           <div>
-            <h4>El sitio</h4>
+            <h4>El colegio</h4>
             <ul>
-              <li>${enlaceAncla('sobre', 'Sobre el colegio', '', RESET_ENLACE)}</li>
-              <li>${enlaceAncla('oferta', 'Oferta del ciclo', '', RESET_ENLACE)}</li>
+              <li>${enlaceAncla('colegio', 'Conócenos', '', RESET_ENLACE)}</li>
+              <li>${enlaceAncla('oferta', 'Oferta educativa', '', RESET_ENLACE)}</li>
               <li>${enlaceAncla('claustro', 'Claustro docente', '', RESET_ENLACE)}</li>
-              <li>${enlaceAncla('admisiones', 'Admisiones y contacto', '', RESET_ENLACE)}</li>
-            </ul>
-          </div>
-          <div>
-            <h4>Claustro</h4>
-            <ul>
-              ${docentes.map(function (d) {
-                return `<li><button type="button" style="${RESET_ENLACE}" data-accion="pub:profesor"
-                  ${U.attr({ 'data-args': { id: d.id } })}>${U.esc(d.nombre)}</button></li>`;
-              }).join('')}
-              <li><button type="button" style="${RESET_ENLACE}" data-accion="pub:acceder">Acceder al portal</button></li>
+              <li>${enlaceAncla('alianzas', 'Nuestras alianzas', '', RESET_ENLACE)}</li>
+              <li>${enlaceAncla('after', 'After Class', '', RESET_ENLACE)}</li>
+              <li>${enlaceAncla('admisiones', 'Informes y admisiones', '', RESET_ENLACE)}</li>
             </ul>
           </div>
           <div>
@@ -196,16 +166,28 @@ const VistaPublica = (function () {
             <ul>
               <li>${U.esc(e.direccion)}</li>
               <li>${U.esc(e.ciudad)}</li>
-              <li>${U.esc(e.telefono)}</li>
+              <li>${U.esc(e.telefono)} · ${U.esc(e.telefono2)}</li>
+              <li>WhatsApp ${U.esc(e.whatsapp)}</li>
               <li>${U.esc(e.email)}</li>
               <li>${U.esc(e.sitio)}</li>
             </ul>
           </div>
+          <div>
+            <h4>Te escuchamos</h4>
+            <ul>
+              <li>Buzón directo: ${U.esc(e.buzon)}</li>
+              <li>${U.esc(e.horarioAtencion)}</li>
+              ${(e.redes || []).map(function (r) {
+                return '<li>' + U.esc(r.nombre) + ' · ' + U.esc(r.usuario) + '</li>';
+              }).join('')}
+            </ul>
+          </div>
         </div>
         <p class="legal">
-          © ${HOY.getFullYear()} ${U.esc(e.nombre)}. Demostración de producto: el colegio, las personas,
+          © ${HOY.getFullYear()} ${U.esc(e.nombre)}. Demostración de producto: el portal, las personas,
           las calificaciones, los pagos y las reseñas son ficticios y se generaron para mostrar cómo
-          funciona el sistema. Ningún dato corresponde a una persona real.
+          funciona el sistema escolar. Los datos institucionales del colegio son públicos; ningún alumno,
+          docente o importe corresponde a una persona real.
         </p>
       </footer>`;
   }
@@ -214,7 +196,6 @@ const VistaPublica = (function () {
 
   function hero() {
     var e = DB.escuela;
-    var prom = promedioColegio();
     var avisos = avisosEscuela(2);
     return `
       <section class="hero" id="cima" style="${ANCLA}">
@@ -222,36 +203,36 @@ const VistaPublica = (function () {
           <div class="hero-sello">
             <span class="sello sello-lg">${U.esc(e.sello)}</span>
             <div>
-              <span class="cinta">${U.icono('sello', 13)} Ciclo ${U.esc(e.ciclo)}</span>
+              <span class="cinta">${U.icono('sello', 13)} ${anosDeTrayectoria()} años · ciclo ${U.esc(e.ciclo)}</span>
               <div class="etiqueta mt-1">${U.esc(e.ciudad)}</div>
             </div>
           </div>
-          <h1 class="hero-tit">Rigor y oficio,<br><em>desde ${e.fundacion}</em></h1>
+          <h1 class="hero-tit">Esfuérzate<br><em>y sé valiente</em></h1>
           <p class="hero-sub">${U.esc(e.mision)}</p>
           <div class="fila envuelve gap-1 mb-3">
             <button type="button" class="btn btn-primario" data-accion="pub:acceder">
               ${U.icono('flecha-der', 16)} Entrar al portal
             </button>
-            <button type="button" class="btn" data-accion="pub:ancla" ${U.attr({ 'data-args': { id: 'claustro' } })}>
-              ${U.icono('usuarios', 16)} Conocer al claustro
+            <button type="button" class="btn" data-accion="pub:ancla" ${U.attr({ 'data-args': { id: 'oferta' } })}>
+              ${U.icono('birrete', 16)} Ver la oferta educativa
             </button>
           </div>
           <div class="hero-datos">
             <div>
               <div class="v">${alumnosInscritos().length}</div>
-              <div class="e">Alumnos inscritos</div>
+              <div class="e">Alumnos en el portal</div>
+            </div>
+            <div>
+              <div class="v">${Q.grados().length}</div>
+              <div class="e">Grados, de kínder a bachillerato</div>
             </div>
             <div>
               <div class="v">${materiasActivas().length}</div>
               <div class="e">Materias del ciclo</div>
             </div>
             <div>
-              <div class="v">${prom === null ? '—' : prom.toFixed(1)}</div>
-              <div class="e">Promedio general</div>
-            </div>
-            <div>
-              <div class="v">${anosDeTrayectoria()}</div>
-              <div class="e">Años de trayectoria</div>
+              <div class="v">${profesoresPublicos().length}</div>
+              <div class="e">Docentes con perfil público</div>
             </div>
           </div>
         </div>
@@ -280,7 +261,8 @@ const VistaPublica = (function () {
           <div class="separador"></div>
           <div class="pila gap-1">
             ${lineaContacto('pin', e.direccion + ', ' + e.ciudad)}
-            ${lineaContacto('telefono', e.telefono)}
+            ${lineaContacto('telefono', e.telefono + ' · ' + e.telefono2)}
+            ${lineaContacto('chat', 'WhatsApp ' + e.whatsapp)}
             ${lineaContacto('correo', e.email)}
             ${lineaContacto('reloj', e.horarioAtencion)}
           </div>
@@ -288,81 +270,172 @@ const VistaPublica = (function () {
       </section>`;
   }
 
-  function bloqueSobre() {
+  function bloqueColegio() {
     var e = DB.escuela;
     var d = DB.direccion;
     return `
-      <section class="bloque" id="sobre" style="${ANCLA}">
-        <h2 class="bloque-tit">Sobre el colegio</h2>
-        <p class="intro">Quiénes somos, cómo trabajamos y quién responde por lo académico.</p>
+      <section class="bloque" id="colegio" style="${ANCLA}">
+        <h2 class="bloque-tit">Nuestro colegio</h2>
+        <p class="intro">Quiénes somos, de dónde venimos y quién responde por lo académico.</p>
         <div class="rejilla">
           <div class="col-8">
-            <p style="max-width:64ch">${U.esc(e.acercaDe)}</p>
-            <div class="fila envuelve gap-1 mt-2">
-              ${U.chip('Fundado en ' + e.fundacion)}
-              ${U.chip(e.ciudad)}
-              ${U.chip('Clases ' + e.diasHabiles)}
-              ${U.chip(plural(materiasActivas().length, 'materia activa', 'materias activas'))}
-              ${U.chip(plural(profesoresPublicos().length, 'profesor', 'profesores'))}
+            <p style="max-width:66ch">${U.esc(e.acercaDe)}</p>
+            <p class="silencio" style="max-width:66ch">${U.esc(e.excelencia)}</p>
+            <div class="rejilla mt-2">
+              <div class="col-6">
+                <div class="tarjeta-plana">
+                  <span class="etiqueta">Misión</span>
+                  <p style="font-size:.88rem;margin:.3rem 0 0">${U.esc(e.mision)}</p>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="tarjeta-plana">
+                  <span class="etiqueta">Visión</span>
+                  <p style="font-size:.88rem;margin:.3rem 0 0">${U.esc(e.vision)}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2">
+              <span class="etiqueta">Nuestros valores</span>
+              <div class="tira-valores mt-1">
+                ${(e.valores || []).map(function (v) { return U.chip(v); }).join('')}
+              </div>
             </div>
           </div>
           <div class="col-4">
             <blockquote class="cita">
-              “${U.esc(e.lema)}”
-              <footer>
-                <div class="fila gap-1">
-                  ${U.avatar(d, 'sm')}
-                  <span>
-                    <strong>${U.esc(d.nombre)}</strong><br>
-                    ${U.esc(d.cargo)} · desde ${U.fecha(d.desde, 'mes')}
-                  </span>
-                </div>
-              </footer>
+              “${U.esc(e.cita.texto)}”
+              <footer>${U.esc(e.cita.autor)}</footer>
             </blockquote>
-            <p class="silencio mt-2" style="font-size:.85rem">${U.esc(recortar(d.bio, 190))}</p>
+            <div class="separador"></div>
+            <div class="fila gap-1">
+              ${U.avatar(d, 'md')}
+              <span style="font-size:.85rem">
+                <strong>${U.esc(d.nombre)}</strong><br>
+                <span class="silencio">${U.esc(d.cargo)} · desde ${U.fecha(d.desde, 'mes')}</span>
+              </span>
+            </div>
+            <p class="silencio mt-2" style="font-size:.85rem">${U.esc(recortar(d.bio, 210))}</p>
           </div>
+        </div>
+        <div class="hero-datos mt-3">
+          ${(e.indicadores || []).map(function (i) {
+            return '<div><div class="v">' + U.esc(i.valor) + '</div>' +
+              '<div class="e">' + U.esc(i.etiqueta) + '</div></div>';
+          }).join('')}
         </div>
       </section>`;
   }
 
+  function bloquePropuesta() {
+    var e = DB.escuela;
+    return `
+      <section class="bloque" id="propuesta" style="${ANCLA}">
+        <h2 class="bloque-tit">Nuestra propuesta</h2>
+        <p class="intro">
+          Un plan de estudios amplio y equilibrado, con actividades gratificantes y estimulantes que
+          preparan a nuestros estudiantes para la mejor vida social y cultural.
+        </p>
+        <div class="pilares">
+          ${(e.pilares || []).map(function (p) {
+            return `
+            <article class="pilar">
+              <span class="ico">${U.icono(p.icono, 22)}</span>
+              <div class="t">${U.esc(p.titulo)}</div>
+              <p>${U.esc(p.texto)}</p>
+            </article>`;
+          }).join('')}
+        </div>
+      </section>`;
+  }
+
+  /* Tarjeta de nivel: lo que el sitio cuenta de él, más lo que el sistema sabe. */
+  function tarjetaNivel(fila) {
+    var n = fila.nivel;
+    return `
+      <article class="nivel-item" style="border-top-color:${U.esc(n.color)}">
+        <div>
+          <div class="edades">${U.esc(n.edades)}</div>
+          <div class="nom">${U.esc(n.nombre)}</div>
+        </div>
+        <p class="desc">${U.esc(recortar(n.descripcion, 250))}</p>
+        <div class="fila envuelve gap-1">
+          ${U.badge(plural(fila.grados, 'grado', 'grados'), 'neutro')}
+          ${U.badge(plural(fila.materias, 'materia', 'materias'), 'neutro')}
+          ${U.badge(U.moneda(n.colegiatura) + ' al mes', 'marca')}
+        </div>
+        <div class="pie">
+          <span class="etiqueta">Certificación</span>
+          <div class="silencio" style="margin-top:.15rem">${U.esc(n.certificacion)}</div>
+        </div>
+      </article>`;
+  }
+
   function bloqueOferta() {
     var e = DB.escuela;
-    var lista = materiasActivas();
+    var filas = Q.resumenNiveles();
+    var grados = Q.grados();
     return `
       <section class="bloque" id="oferta" style="${ANCLA}">
-        <h2 class="bloque-tit">Oferta del ciclo ${U.esc(e.ciclo)}</h2>
+        <h2 class="bloque-tit">Oferta educativa</h2>
         <p class="intro">
-          ${plural(lista.length, 'materia activa', 'materias activas')}, cada una con profesor titular.
-          Toca cualquiera para conocer a quien la imparte.
+          De preescolar a bachillerato, un modelo bicultural que integra las artes, la tecnología de punta
+          y altos estándares académicos. Ciclo ${U.esc(e.ciclo)}.
         </p>
-        <div class="oferta">
-          ${lista.map(function (m) {
-            var pr = Q.profesor(m.profesorId);
-            var etiquetaBoton = pr ? 'Ver el perfil de ' + pr.nombre : 'Materia ' + m.nombre;
-            return `
-            <button type="button" class="oferta-item" style="${RESET_BOTON}" data-accion="pub:profesor"
-                    ${U.attr({ 'data-args': { id: m.profesorId } })} aria-label="${U.esc(etiquetaBoton)}">
-              <span class="cod">${U.esc(m.codigo)}</span>
-              <span class="nom">${U.esc(m.nombre)}</span>
-              <span class="desc">${U.esc(recortar(m.descripcion, 128))}</span>
-              <span class="fila envuelve gap-1" style="margin-top:.2rem">
-                ${U.badge(m.creditos + ' créditos', 'neutro')}
-                ${U.badge('Aula ' + m.aula, 'neutro')}
-                ${diasDe(m) ? U.badge(diasDe(m), 'neutro') : ''}
-              </span>
-              <span class="pie">
-                ${pr ? U.avatar(pr, 'xs') + '<span class="truncar">' + U.esc(pr.nombre) + '</span>'
-                     : '<span>Profesor por asignar</span>'}
-              </span>
-            </button>`;
-          }).join('')}
+        <div class="niveles">
+          ${filas.map(tarjetaNivel).join('')}
+        </div>
+
+        <h3 class="mt-3 mb-1 destacado" style="font-size:1.2rem">Grados y plan de estudios</h3>
+        <p class="silencio mb-2" style="font-size:.86rem">
+          Cada grado tiene un profesor titular que responde por el grupo y un plan de materias propio.
+        </p>
+        <div class="panel">
+          <div class="panel-cuerpo sin-relleno">
+            <div class="tabla-envoltura">
+              <table class="tabla">
+                <thead>
+                  <tr>
+                    <th>Grado</th><th>Titular</th><th>Materias del plan</th>
+                    <th class="num">Aula</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${grados.map(function (g) {
+                    var tutor = Q.profesor(g.tutorId);
+                    var mats = Q.materiasDeGrado(g.id);
+                    return `
+                    <tr>
+                      <td>
+                        <strong>${U.esc(g.etiqueta)}</strong>
+                        <div class="silencio" style="font-size:.78rem">Grupo ${U.esc(g.grupo)}</div>
+                      </td>
+                      <td>${tutor
+                        ? '<button type="button" style="' + RESET_ENLACE + '" data-accion="pub:profesor" ' +
+                          U.attr({ 'data-args': { id: tutor.id } }) + '>' + U.esc(tutor.nombre) + '</button>'
+                        : '<span class="silencio">Por asignar</span>'}</td>
+                      <td class="silencio" style="font-size:.82rem">
+                        ${mats.map(function (m) { return U.esc(m.nombre); }).join(' · ')}
+                      </td>
+                      <td class="num mono">${U.esc(g.aula)}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel-pie">
+            ${plural(grados.length, 'grado', 'grados')} en operación ·
+            ${plural(materiasActivas().length, 'materia activa', 'materias activas')} ·
+            ${plural(alumnosInscritos().length, 'alumno inscrito', 'alumnos inscritos')} en el portal.
+          </div>
         </div>
       </section>`;
   }
 
   function tarjetaDocente(p) {
     var r = ratingPublico(p.id);
-    var materias = Q.materiasDeProfesor(p.id).filter(activa);
+    var grados = Q.gradosDeProfesor(p.id);
     var areas = (p.areas || []).slice(0, 4);
     return `
       <button type="button" class="claustro-item" data-accion="pub:profesor" ${U.attr({ 'data-args': { id: p.id } })}
@@ -386,11 +459,11 @@ const VistaPublica = (function () {
             areas.map(function (a) { return U.chip(a); }).join('') + '</div>'
           : ''}
         <div style="font-size:.82rem">
-          <span class="etiqueta">Imparte</span>
+          <span class="etiqueta">Imparte en</span>
           <div class="silencio" style="margin-top:.2rem">
-            ${materias.length
-              ? materias.map(function (m) { return U.esc(m.codigo + ' · ' + m.nombre); }).join('<br>')
-              : 'Sin materias activas en este ciclo'}
+            ${grados.length
+              ? grados.map(function (g) { return U.esc(g.corto); }).join(' · ')
+              : 'Sin grupos asignados en este ciclo'}
           </div>
         </div>
       </button>`;
@@ -402,8 +475,8 @@ const VistaPublica = (function () {
       <section class="bloque" id="claustro" style="${ANCLA}">
         <h2 class="bloque-tit">Claustro docente</h2>
         <p class="intro">
-          Cada perfil abre con la formación, la trayectoria, las materias del ciclo y las reseñas
-          públicas que dejaron sus alumnos.
+          Cada perfil abre con la formación, la trayectoria, los grupos del ciclo y las reseñas públicas
+          que dejaron sus alumnos.
         </p>
         ${docentes.length
           ? '<div class="claustro">' + docentes.map(tarjetaDocente).join('') + '</div>'
@@ -415,20 +488,87 @@ const VistaPublica = (function () {
       </section>`;
   }
 
+  function bloqueAlianzas() {
+    var e = DB.escuela;
+    return `
+      <section class="bloque" id="alianzas" style="${ANCLA}">
+        <h2 class="bloque-tit">Nuestras alianzas</h2>
+        <p class="intro">
+          Alianzas estratégicas que enriquecen el proceso de aprendizaje de alumnos y docentes, con
+          tecnología de punta y universidades de prestigio internacional.
+        </p>
+        <div class="alianzas">
+          ${(e.alianzas || []).map(function (a) {
+            return `
+            <article class="alianza">
+              <span class="sigla">${U.esc(a.sigla)}</span>
+              <div>
+                <div class="nom">${U.esc(a.nombre)}</div>
+                <p>${U.esc(a.texto)}</p>
+              </div>
+            </article>`;
+          }).join('')}
+        </div>
+
+        <h3 class="mt-3 mb-1 destacado" style="font-size:1.2rem">True International Experience</h3>
+        <p class="silencio mb-2" style="font-size:.88rem;max-width:66ch">
+          Por más de trece años el colegio ha buscado dar experiencias internacionales a sus alumnos.
+        </p>
+        <div class="rejilla">
+          ${(e.internacional || []).map(function (v) {
+            return `
+            <div class="col-6">
+              <div class="tarjeta">
+                <div class="fila gap-1 mb-1">
+                  <span style="color:var(--acento);display:flex">${U.icono('pin', 17)}</span>
+                  <strong>${U.esc(v.lugar)}</strong>
+                </div>
+                <p class="silencio" style="font-size:.86rem;margin:0">${U.esc(v.detalle)}</p>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </section>`;
+  }
+
+  function bloqueAfter() {
+    var e = DB.escuela;
+    return `
+      <section class="bloque" id="after" style="${ANCLA}">
+        <h2 class="bloque-tit">After Class</h2>
+        <p class="intro">${U.esc(e.afterclassTexto)}</p>
+        <div class="after">
+          ${(e.afterclass || []).map(function (g) {
+            return `
+            <article class="after-grupo">
+              <div class="t">${U.icono(g.icono, 18)} ${U.esc(g.grupo)}</div>
+              <div class="fila envuelve gap-1">
+                ${(g.actividades || []).map(function (a) { return U.chip(a); }).join('')}
+              </div>
+            </article>`;
+          }).join('')}
+        </div>
+      </section>`;
+  }
+
   function bloqueAdmisiones() {
     var e = DB.escuela;
     var b = becas();
+    var filas = Q.resumenNiveles();
     return `
       <section class="bloque" id="admisiones" style="${ANCLA}">
-        <h2 class="bloque-tit">Admisiones y contacto</h2>
-        <p class="intro">Costos del ciclo ${U.esc(e.ciclo)} y datos para comunicarse con la administración.</p>
+        <h2 class="bloque-tit">Informes y admisiones</h2>
+        <p class="intro">
+          Continuamos inscripciones y reinscripciones para el ciclo ${U.esc(e.ciclo)}. Visítanos en horario
+          de oficina, escríbenos o llámanos: te contestamos a la brevedad.
+        </p>
         <div class="rejilla">
           <div class="col-8">
             <div class="panel">
               <div class="panel-cab">
                 <div>
-                  <h3 class="panel-tit">Costos del ciclo</h3>
-                  <p class="panel-sub">Montos en ${U.esc(e.moneda)}</p>
+                  <h3 class="panel-tit">Costos por nivel</h3>
+                  <p class="panel-sub">Montos en ${U.esc(e.moneda)} · colegiatura de diez meses</p>
                 </div>
                 ${U.badge('Ciclo ' + e.ciclo, 'marca')}
               </div>
@@ -436,36 +576,31 @@ const VistaPublica = (function () {
                 <div class="tabla-envoltura">
                   <table class="tabla">
                     <thead>
-                      <tr><th>Concepto</th><th class="num">Monto</th><th>Detalle</th></tr>
+                      <tr>
+                        <th>Nivel</th><th>Edades</th>
+                        <th class="num">Inscripción</th><th class="num">Colegiatura</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>Colegiatura mensual</td>
-                        <td class="num mono">${U.moneda(e.colegiaturaMensual)}</td>
-                        <td class="silencio">Vence el día 5 de cada mes</td>
-                      </tr>
-                      <tr>
-                        <td>Inscripción anual</td>
-                        <td class="num mono">${U.moneda(costoInscripcion())}</td>
-                        <td class="silencio">Pago único al abrir el ciclo</td>
-                      </tr>
-                      <tr>
-                        <td>Recargo por pago tardío</td>
-                        <td class="num mono">${e.recargoPct}%</td>
-                        <td class="silencio">Sobre el saldo vencido</td>
-                      </tr>
-                      <tr>
-                        <td>Becas vigentes</td>
-                        <td class="num mono">${b.cuantos}</td>
-                        <td class="silencio">${b.max ? 'Hasta ' + b.max + '% de descuento en colegiatura'
-                                                    : 'Sin becas asignadas en este ciclo'}</td>
-                      </tr>
+                      ${filas.map(function (f) {
+                        return `
+                        <tr>
+                          <td><strong>${U.esc(f.nivel.nombre)}</strong>
+                            <div class="silencio" style="font-size:.78rem">${plural(f.grados, 'grado', 'grados')}</div>
+                          </td>
+                          <td class="silencio">${U.esc(f.nivel.edades)}</td>
+                          <td class="num mono">${U.moneda(f.nivel.inscripcion)}</td>
+                          <td class="num mono">${U.moneda(f.nivel.colegiatura)}</td>
+                        </tr>`;
+                      }).join('')}
                     </tbody>
                   </table>
                 </div>
               </div>
               <div class="panel-pie">
-                El pago se recibe por transferencia, tarjeta o ventanilla. El estado de cuenta al día se
+                La colegiatura vence el día 5 de cada mes; después del día 10 se aplica el recargo del
+                ${e.recargoPct}% previsto en el reglamento. Hay ${plural(b.cuantos, 'beca vigente', 'becas vigentes')}
+                ${b.max ? 'de hasta ' + b.max + '% de descuento' : ''}. El estado de cuenta al día se
                 consulta dentro del portal, en la sección de Pagos.
               </div>
             </div>
@@ -480,12 +615,14 @@ const VistaPublica = (function () {
               </div>
               <div class="panel-cuerpo">
                 <div class="datos-rejilla">
-                  ${dato('Horario de atención', e.horarioAtencion)}
-                  ${dato('Días de clase', e.diasHabiles)}
                   ${dato('Dirección', e.direccion)}
                   ${dato('Ciudad', e.ciudad)}
-                  ${dato('Teléfono', e.telefono)}
+                  ${dato('Teléfonos', e.telefono + ' · ' + e.telefono2)}
+                  ${dato('WhatsApp', e.whatsapp)}
                   ${dato('Correo', e.email)}
+                  ${dato('Buzón «te escuchamos»', e.buzon)}
+                  ${dato('Horario de atención', e.horarioAtencion)}
+                  ${dato('Días de clase', e.diasHabiles)}
                 </div>
               </div>
             </div>
@@ -494,9 +631,10 @@ const VistaPublica = (function () {
         <div class="aviso-demo mt-2">
           <span style="display:flex">${U.icono('info', 16)}</span>
           <div>
-            <strong>Esto es una demostración.</strong> Colegio Altamira no existe: alumnos, profesores,
-            calificaciones, pagos y reseñas se generaron para mostrar el sistema completo. Puedes entrar
-            con cualquiera de las cuentas de ejemplo, sin contraseña.
+            <strong>Esto es una demostración del sistema escolar.</strong> Los datos institucionales son
+            los públicos del colegio; los alumnos, docentes, calificaciones, pagos y reseñas se generaron
+            para mostrar cómo funciona el portal. Puedes entrar con cualquiera de las cuentas de ejemplo,
+            sin contraseña.
           </div>
         </div>
       </section>`;
@@ -508,9 +646,12 @@ const VistaPublica = (function () {
         ${navSitio()}
         <div class="sitio-cuerpo">
           ${hero()}
-          ${bloqueSobre()}
+          ${bloqueColegio()}
+          ${bloquePropuesta()}
           ${bloqueOferta()}
           ${bloqueClaustro()}
+          ${bloqueAlianzas()}
+          ${bloqueAfter()}
           ${bloqueAdmisiones()}
         </div>
         ${pieSitio()}
@@ -591,12 +732,13 @@ const VistaPublica = (function () {
               <table class="tabla">
                 <thead>
                   <tr>
-                    <th>Código</th><th>Materia</th><th>Horario</th><th>Aula</th><th class="num">Inscritos</th>
+                    <th>Código</th><th>Materia</th><th>Grado</th><th>Horario</th><th>Aula</th><th class="num">Inscritos</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${materias.map(function (m) {
                     var n = Q.alumnosDeMateria(m.id).length;
+                    var g = Q.grado(m.gradoId);
                     return `
                     <tr>
                       <td class="mono">${U.esc(m.codigo)}</td>
@@ -604,6 +746,7 @@ const VistaPublica = (function () {
                         <strong>${U.esc(m.nombre)}</strong>
                         <div class="silencio" style="font-size:.79rem">${m.creditos} créditos</div>
                       </td>
+                      <td>${g ? '<span class="grado-pin">' + U.esc(g.corto) + '</span>' : '<span class="silencio">—</span>'}</td>
                       <td class="silencio nowrap">${U.esc(horarioLegible(m) || '—')}</td>
                       <td>${U.esc(m.aula)}</td>
                       <td class="num mono">${n} <span class="silencio">/ ${m.cupo}</span></td>
@@ -862,7 +1005,7 @@ const VistaPublica = (function () {
   /* --------------------------------------------------------------- objeto -- */
 
   return {
-    titulo: 'Colegio Altamira',
+    titulo: 'The Livingstone',
 
     render: function (ctx) {
       var c = ctx || {};

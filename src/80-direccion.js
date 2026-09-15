@@ -18,6 +18,10 @@ const VistaDireccion = (function () {
     foco: null,
     qAlumno: '',
     fEstatus: 'todos',
+    fNivel: 'todos',
+    fGrado: 'todos',
+    fNivelMateria: 'todos',
+    gradoHorario: '',
     fPagoEstado: 'todos',
     fPagoAlumno: 'todos',
     fResProfesor: 'todos',
@@ -117,6 +121,44 @@ const VistaDireccion = (function () {
 
   function opcionesProfesor(sel) {
     return opciones(DB.profesores.map(function (p) { return { v: p.id, t: p.nombre }; }), sel);
+  }
+
+  /* ------------------------------------------------------ niveles y grados */
+
+  function listaGrados(nivelId) {
+    return Q.grados(nivelId && nivelId !== 'todos' ? nivelId : null) || [];
+  }
+
+  function opcionesNivel(sel, primera) {
+    return opciones([{ v: 'todos', t: primera || 'Todos los niveles' }].concat(
+      (Q.niveles() || []).map(function (n) { return { v: n.id, t: n.nombre }; })
+    ), sel);
+  }
+
+  /* Grados del selector, ya filtrados por el nivel elegido. */
+  function opcionesGrado(sel, nivelId, primera) {
+    return opciones([{ v: 'todos', t: primera || 'Todos los grados' }].concat(
+      listaGrados(nivelId).map(function (g) { return { v: g.id, t: g.etiqueta }; })
+    ), sel);
+  }
+
+  /* Insignia con el grado: se pinta igual en tablas, fichas y expedientes. */
+  function pinGrado(gradoId) {
+    var g = Q.grado(gradoId);
+    if (!g) return '<span class="silencio">Sin grado</span>';
+    return '<span class="grado-pin">' + esc(g.corto) + '</span>';
+  }
+
+  function nombreGrado(gradoId) {
+    var g = Q.grado(gradoId);
+    return g ? g.etiqueta : 'Sin grado';
+  }
+
+  function gradoDe(a) { return a ? Q.grado(a.gradoId) : null; }
+
+  function tutorDe(a) {
+    var g = gradoDe(a);
+    return g ? Q.profesor(g.tutorId) : null;
   }
 
   /* ------------------------------------------------------- campos de forma */
@@ -304,10 +346,27 @@ const VistaDireccion = (function () {
       '</div>';
   }
 
-  function graficaPromedioMaterias() {
-    var series = materiasActivas().map(function (m) {
-      var p = Q.promedioGrupo(m.id);
-      return { etiqueta: m.nombre, valor: (p === null || p === undefined) ? 0 : p, color: m.color || 'var(--marca)' };
+  /* Ochenta materias no caben en una gráfica: el colegio se lee por nivel y,
+     cuando hace falta el detalle, por grado. */
+  function graficaPromedioNiveles() {
+    var series = (Q.resumenNiveles() || []).map(function (f) {
+      return {
+        etiqueta: f.nivel.nombre,
+        valor: f.promedio === null ? 0 : f.promedio,
+        color: f.nivel.color || 'var(--marca)'
+      };
+    });
+    return U.barras({ series: series, max: 10, meta: 8, formato: U.notaTexto });
+  }
+
+  function graficaPromedioGrados() {
+    var series = (Q.grados() || []).map(function (g) {
+      var r = Q.resumenGrado(g.id);
+      return {
+        etiqueta: g.corto,
+        valor: r.promedio === null ? 0 : r.promedio,
+        color: (r.nivel && r.nivel.color) || 'var(--marca)'
+      };
     });
     return U.barras({ series: series, max: 10, meta: 8, formato: U.notaTexto });
   }
@@ -400,11 +459,12 @@ const VistaDireccion = (function () {
       cuerpo: panelRiesgo()
     }) + '</div>');
 
-    /* Promedio por materia */
+    /* Promedio por nivel */
     h.push('<div class="col-6">' + U.panel({
-      titulo: 'Promedio por materia',
+      titulo: 'Promedio por nivel',
       sub: 'Meta institucional: 8.0',
-      cuerpo: graficaPromedioMaterias()
+      acciones: '<a class="btn btn-sm" href="#/direccion/grados">Ver por grado</a>',
+      cuerpo: graficaPromedioNiveles()
     }) + '</div>');
 
     /* Actividad reciente */
@@ -475,8 +535,14 @@ const VistaDireccion = (function () {
     var q = estado.qAlumno.trim().toLowerCase();
     return DB.alumnos.filter(function (a) {
       if (estado.fEstatus !== 'todos' && a.estatus !== estado.fEstatus) return false;
+      if (estado.fGrado !== 'todos' && a.gradoId !== estado.fGrado) return false;
+      if (estado.fNivel !== 'todos') {
+        var g = Q.grado(a.gradoId);
+        if (!g || g.nivelId !== estado.fNivel) return false;
+      }
       if (!q) return true;
-      return (a.nombre + ' ' + a.matricula + ' ' + a.email).toLowerCase().indexOf(q) >= 0;
+      return (a.nombre + ' ' + a.matricula + ' ' + a.email + ' ' + nombreGrado(a.gradoId))
+        .toLowerCase().indexOf(q) >= 0;
     });
   }
 
@@ -490,6 +556,7 @@ const VistaDireccion = (function () {
       return {
         alumno: celdaPersona(a, esc(a.email)),
         matricula: '<span class="mono">' + esc(a.matricula) + '</span>',
+        grado: pinGrado(a.gradoId),
         materias: '<span class="mono">' + Q.materiasDeAlumno(a.id).length + '</span>',
         promedio: nota(Q.promedioGeneral(a.id)),
         asistencia: '<span class="' + (pctAs >= 90 ? 'nota-alta' : (pctAs >= 80 ? 'nota-media' : 'nota-baja')) + '">' + pctAs + '%</span>',
@@ -508,9 +575,13 @@ const VistaDireccion = (function () {
     var controles = '<div class="fila envuelve mb-2">' +
       '<div class="buscador crece">' + U.icono('buscar', 16) +
       '<input class="entrada" id="dir-busca-alumno" type="search" value="' + esc(estado.qAlumno) + '" ' +
-      'placeholder="Buscar por nombre, matrícula o correo" aria-label="Buscar alumno" data-entrada="dir:buscarAlumno">' +
+      'placeholder="Buscar por nombre, matrícula, correo o grado" aria-label="Buscar alumno" data-entrada="dir:buscarAlumno">' +
       '</div>' +
-      '<select class="selec" style="width:auto;min-width:190px" aria-label="Filtrar por estatus" data-cambio="dir:filtroEstatus">' +
+      '<select class="selec" style="width:auto;min-width:160px" aria-label="Filtrar por nivel" data-cambio="dir:filtroNivel">' +
+      opcionesNivel(estado.fNivel) + '</select>' +
+      '<select class="selec" style="width:auto;min-width:180px" aria-label="Filtrar por grado" data-cambio="dir:filtroGrado">' +
+      opcionesGrado(estado.fGrado, estado.fNivel) + '</select>' +
+      '<select class="selec" style="width:auto;min-width:175px" aria-label="Filtrar por estatus" data-cambio="dir:filtroEstatus">' +
       opciones([
         { v: 'todos', t: 'Todos los estatus' },
         { v: 'activo', t: 'Sólo activos' },
@@ -522,13 +593,14 @@ const VistaDireccion = (function () {
 
     return U.seccion({
       titulo: 'Alumnos',
-      sub: 'Padrón completo del colegio, con promedio, asistencia y estado de cuenta',
+      sub: 'Padrón completo del colegio por grado, con promedio, asistencia y estado de cuenta',
       acciones: '<button type="button" class="btn btn-primario" data-accion="dir:nuevoAlumno">' +
         U.icono('mas', 16) + ' Nuevo alumno</button>',
       cuerpo: U.panel({
         cuerpo: controles + tabla([
           { clave: 'alumno', titulo: 'Alumno', html: true },
           { clave: 'matricula', titulo: 'Matrícula', html: true },
+          { clave: 'grado', titulo: 'Grado', html: true },
           { clave: 'materias', titulo: 'Materias', align: 'num', html: true },
           { clave: 'promedio', titulo: 'Promedio', align: 'num', html: true },
           { clave: 'asistencia', titulo: 'Asistencia', align: 'num', html: true },
@@ -544,6 +616,14 @@ const VistaDireccion = (function () {
     a = a || {};
     var t = a.tutor || {};
     return campo({ nombre: 'nombre', etiqueta: 'Nombre completo', valor: a.nombre, requerido: true, col: 'col-12', id: 'al-nombre' }) +
+      campo({
+        nombre: 'gradoId', tipo: 'selec', etiqueta: 'Grado escolar', valor: a.gradoId, requerido: true,
+        col: 'col-6', id: 'al-grado',
+        ayuda: 'Al guardar queda inscrito en el plan completo de ese grado.',
+        opciones: (Q.grados() || []).map(function (g) {
+          return { v: g.id, t: g.etiqueta + ' · grupo ' + g.grupo };
+        })
+      }) +
       campo({ nombre: 'email', tipo: 'email', etiqueta: 'Correo institucional', valor: a.email, requerido: true, col: 'col-6', id: 'al-email' }) +
       campo({ nombre: 'telefono', tipo: 'tel', etiqueta: 'Teléfono', valor: a.telefono, col: 'col-6', id: 'al-tel' }) +
       campo({ nombre: 'nacimiento', tipo: 'date', etiqueta: 'Fecha de nacimiento', valor: a.nacimiento, col: 'col-6', id: 'al-nac' }) +
@@ -563,6 +643,7 @@ const VistaDireccion = (function () {
   function datosAlumnoDeForma(d) {
     return {
       nombre: String(d.nombre || '').trim(),
+      gradoId: String(d.gradoId || '').trim(),
       email: String(d.email || '').trim(),
       telefono: String(d.telefono || '').trim(),
       nacimiento: String(d.nacimiento || '').trim(),
@@ -580,6 +661,7 @@ const VistaDireccion = (function () {
 
   function validaAlumno(datos) {
     if (datos.nombre.length < 4) { U.toast('Escribe el nombre completo del alumno.', 'crit'); return false; }
+    if (!Q.grado(datos.gradoId)) { U.toast('Elige el grado escolar del alumno.', 'crit'); return false; }
     if (datos.email.indexOf('@') < 1) { U.toast('El correo no es válido.', 'crit'); return false; }
     if (datos.becaPct < 0 || datos.becaPct > 100) { U.toast('La beca va de 0 a 100 por ciento.', 'crit'); return false; }
     return true;
@@ -605,10 +687,17 @@ const VistaDireccion = (function () {
       cuerpo: '<div class="fila envuelve gap-3">' + U.avatar(a, 'lg') +
         '<div class="crece"><h2 class="destacado">' + esc(a.nombre) + '</h2>' +
         '<div class="fila envuelve gap-1 mt-1">' + badgeEstatusAlumno(a.estatus) +
+        pinGrado(a.gradoId) +
         U.chip('Matrícula ' + a.matricula) +
         (num(a.becaPct) ? U.chip('Beca ' + num(a.becaPct) + '%') : '') +
         U.chip(mats.length + (mats.length === 1 ? ' materia' : ' materias')) + '</div>' +
         '<div class="datos-rejilla mt-2">' +
+        '<div class="dato"><span class="e">Grado</span><span class="v">' + esc(nombreGrado(a.gradoId)) +
+        (gradoDe(a) ? ' · grupo ' + esc(gradoDe(a).grupo) : '') + '</span></div>' +
+        '<div class="dato"><span class="e">Titular del grupo</span><span class="v">' +
+        esc(tutorDe(a) ? tutorDe(a).nombre : '—') + '</span></div>' +
+        '<div class="dato"><span class="e">Colegiatura mensual</span><span class="v mono">' +
+        U.moneda(Q.colegiaturaDe(a.id)) + '</span></div>' +
         '<div class="dato"><span class="e">Correo</span><span class="v">' + esc(a.email) + '</span></div>' +
         '<div class="dato"><span class="e">Teléfono</span><span class="v mono">' + esc(a.telefono || '—') + '</span></div>' +
         '<div class="dato"><span class="e">Nacimiento</span><span class="v">' + esc(a.nacimiento ? U.fecha(a.nacimiento, 'corta') : '—') + '</span></div>' +
@@ -926,11 +1015,22 @@ const VistaDireccion = (function () {
 
   /* =========================================================== MATERIAS ==== */
 
-  function horarioSemanal() {
+  /* El horario se mira siempre de un grupo: con ochenta materias en el colegio,
+     la rejilla de «todo junto» no se puede leer. */
+  function gradoDelHorario() {
+    var todos = Q.grados() || [];
+    if (!todos.length) return null;
+    var elegido = todos.filter(function (g) { return g.id === estado.gradoHorario; })[0];
+    return elegido || todos[0];
+  }
+
+  function horarioSemanal(gradoId) {
     var dias = DIAS.slice();
     var bloques = {};
     dias.forEach(function (d) { bloques[d] = []; });
-    materiasActivas().forEach(function (m) {
+    materiasActivas().filter(function (m) {
+      return !gradoId || m.gradoId === gradoId;
+    }).forEach(function (m) {
       (m.horario || []).forEach(function (b) {
         if (!bloques[b.dia]) { bloques[b.dia] = []; dias.push(b.dia); }
         bloques[b.dia].push({ inicio: b.inicio, fin: b.fin, m: m });
@@ -954,12 +1054,16 @@ const VistaDireccion = (function () {
   }
 
   function seccionMaterias() {
-    var filas = DB.materias.map(function (m) {
+    var visibles = DB.materias.filter(function (m) {
+      return estado.fNivelMateria === 'todos' || m.nivelId === estado.fNivelMateria;
+    });
+    var filas = visibles.map(function (m) {
       var inscritos = (Q.alumnosDeMateria(m.id) || []).length;
       var cupo = num(m.cupo);
       var lleno = cupo ? Math.round(inscritos / cupo * 100) : 0;
       return {
         codigo: '<span class="mono">' + esc(m.codigo) + '</span>',
+        grado: pinGrado(m.gradoId),
         nombre: '<div><strong>' + esc(m.nombre) + '</strong><div><small class="silencio">' +
           esc((m.horario || []).map(function (b) { return b.dia + ' ' + b.inicio; }).join(' · ') || 'Sin horario') + '</small></div></div>',
         profesor: '<select class="selec" style="min-width:200px" aria-label="Profesor de ' + esc(m.nombre) + '" ' +
@@ -977,11 +1081,18 @@ const VistaDireccion = (function () {
       };
     });
 
+    var filtroNivel = '<div class="fila envuelve mb-2">' +
+      '<select class="selec" style="width:auto;min-width:190px" aria-label="Filtrar materias por nivel" ' +
+      'data-cambio="dir:filtroNivelMateria">' + opcionesNivel(estado.fNivelMateria) + '</select>' +
+      '<span class="chip">' + visibles.length + ' de ' + DB.materias.length + '</span>' +
+      '</div>';
+
     var cuerpoTabla = U.panel({
-      titulo: 'Oferta del ciclo ' + DB.escuela.ciclo,
+      titulo: 'Plan de estudios del ciclo ' + DB.escuela.ciclo,
       sub: 'Cambia el selector de la columna «Imparte» para reasignar la materia',
-      cuerpo: tabla([
+      cuerpo: filtroNivel + tabla([
         { clave: 'codigo', titulo: 'Código', html: true },
+        { clave: 'grado', titulo: 'Grado', html: true },
         { clave: 'nombre', titulo: 'Materia', html: true },
         { clave: 'profesor', titulo: 'Imparte', html: true },
         { clave: 'creditos', titulo: 'Créditos', align: 'num', html: true },
@@ -990,30 +1101,45 @@ const VistaDireccion = (function () {
         { clave: 'promedio', titulo: 'Promedio', align: 'num', html: true },
         { clave: 'estatus', titulo: 'Estatus', html: true },
         { clave: 'acciones', titulo: '', align: 'num', html: true }
-      ], filas, 'No hay materias registradas.')
+      ], filas, 'No hay materias en ese nivel.')
     });
+
+    var gh = gradoDelHorario();
+    var selectorGrado = '<select class="selec" style="width:auto;min-width:210px" ' +
+      'aria-label="Grado del horario" data-cambio="dir:horarioGrado">' +
+      opciones((Q.grados() || []).map(function (g) {
+        return { v: g.id, t: g.etiqueta + ' · grupo ' + g.grupo };
+      }), gh ? gh.id : '') + '</select>';
 
     return U.seccion({
       titulo: 'Materias',
-      sub: 'Asignación docente, cupo, promedio y horario semanal del colegio',
+      sub: 'Plan de estudios por grado, asignación docente, cupo y horario semanal',
       acciones: '<button type="button" class="btn btn-primario" data-accion="dir:nuevaMateria">' +
         U.icono('mas', 16) + ' Nueva materia</button>',
       cuerpo: '<div class="rejilla">' +
         '<div class="col-12">' + cuerpoTabla + '</div>' +
         '<div class="col-12">' + U.panel({
-          titulo: 'Horario semanal del colegio',
-          sub: 'Todas las materias activas, colocadas por día y ordenadas por hora',
-          cuerpo: horarioSemanal()
+          titulo: 'Horario semanal del grupo',
+          sub: gh ? gh.etiqueta + ' · aula ' + gh.aula : 'Sin grados registrados',
+          acciones: selectorGrado,
+          cuerpo: horarioSemanal(gh ? gh.id : null)
         }) + '</div>' +
         '</div>'
     });
   }
 
   function camposMateria() {
-    return campo({ nombre: 'codigo', etiqueta: 'Código', requerido: true, col: 'col-4', id: 'mt-cod', placeholder: 'MAT-220' }) +
+    return campo({ nombre: 'codigo', etiqueta: 'Código', requerido: true, col: 'col-4', id: 'mt-cod', placeholder: 'MAT-S2' }) +
       campo({ nombre: 'nombre', etiqueta: 'Nombre de la materia', requerido: true, col: 'col-8', id: 'mt-nom' }) +
+      campo({
+        nombre: 'gradoId', tipo: 'selec', etiqueta: 'Grado escolar', requerido: true, col: 'col-6', id: 'mt-grado',
+        ayuda: 'Entra al plan de ese grado: se inscribe a todo el grupo.',
+        opciones: (Q.grados() || []).map(function (g) {
+          return { v: g.id, t: g.etiqueta + ' · grupo ' + g.grupo };
+        })
+      }) +
       campo({ nombre: 'profesorId', tipo: 'selec', etiqueta: 'Imparte', requerido: true, col: 'col-6', id: 'mt-prof', opciones: DB.profesores.map(function (p) { return { v: p.id, t: p.nombre }; }) }) +
-      campo({ nombre: 'aula', etiqueta: 'Aula', col: 'col-6', id: 'mt-aula', placeholder: 'B-204' }) +
+      campo({ nombre: 'aula', etiqueta: 'Aula', col: 'col-6', id: 'mt-aula', placeholder: 'S-21' }) +
       campo({ nombre: 'creditos', tipo: 'number', etiqueta: 'Créditos', valor: 6, min: 1, max: 12, col: 'col-6', id: 'mt-cre' }) +
       campo({ nombre: 'cupo', tipo: 'number', etiqueta: 'Cupo', valor: 24, min: 1, max: 60, col: 'col-6', id: 'mt-cupo' }) +
       campo({ nombre: 'descripcion', tipo: 'area', filas: 3, etiqueta: 'Descripción', col: 'col-12', id: 'mt-desc' }) +
@@ -1021,6 +1147,100 @@ const VistaDireccion = (function () {
       campo({ nombre: 'dia', tipo: 'selec', etiqueta: 'Día', col: 'col-4', id: 'mt-dia', opciones: DIAS.map(function (d) { return { v: d, t: d }; }) }) +
       campo({ nombre: 'inicio', tipo: 'time', etiqueta: 'Inicio', valor: '07:30', col: 'col-4', id: 'mt-ini' }) +
       campo({ nombre: 'fin', tipo: 'time', etiqueta: 'Fin', valor: '09:00', col: 'col-4', id: 'mt-fin' });
+  }
+
+  /* ============================================================= GRADOS ==== */
+
+  function tarjetaNivelDir(f) {
+    return '<div class="col-3">' + U.kpi({
+      etiqueta: f.nivel.nombre,
+      icono: 'birrete',
+      variante: varNota(f.promedio),
+      valor: U.notaTexto(f.promedio),
+      sub: f.alumnos + (f.alumnos === 1 ? ' alumno · ' : ' alumnos · ') + f.grados +
+        (f.grados === 1 ? ' grado' : ' grados'),
+      pie: f.materias + ' materias · asistencia ' + f.asistencia + '% · ' +
+        U.moneda(f.nivel.colegiatura) + ' al mes'
+    }) + '</div>';
+  }
+
+  function seccionGrados() {
+    var h = [];
+    var filasNivel = Q.resumenNiveles() || [];
+    filasNivel.forEach(function (f) { h.push(tarjetaNivelDir(f)); });
+
+    var filas = (Q.grados() || []).map(function (g) {
+      var r = Q.resumenGrado(g.id);
+      var mats = Q.materiasDeGrado(g.id);
+      var lleno = num(g.cupo) ? Math.round(r.alumnos / num(g.cupo) * 100) : 0;
+      return {
+        grado: '<div><strong>' + esc(g.etiqueta) + '</strong>' +
+          '<div><small class="silencio">Grupo ' + esc(g.grupo) + ' · aula ' + esc(g.aula) + '</small></div></div>',
+        nivel: esc(r.nivel ? r.nivel.nombre : '—'),
+        tutor: r.tutor ? celdaPersona(r.tutor, esc(r.tutor.titulo || '')) : '<span class="silencio">Por asignar</span>',
+        alumnos: '<div style="min-width:104px"><span class="mono">' + r.alumnos + ' / ' + num(g.cupo) + '</span>' +
+          U.progreso(lleno, lleno >= 100 ? 'crit' : 'ok') + '</div>',
+        materias: '<span class="mono">' + mats.length + '</span>',
+        promedio: nota(r.promedio),
+        asistencia: '<span class="' + (r.asistencia >= 90 ? 'nota-alta' : (r.asistencia >= 80 ? 'nota-media' : 'nota-baja')) +
+          '">' + r.asistencia + '%</span>',
+        acciones: '<a class="btn btn-sm" href="#/direccion/alumnos?grado=' + esc(g.id) + '">Ver grupo</a>'
+      };
+    });
+
+    h.push('<div class="col-12">' + U.panel({
+      titulo: 'Grados del colegio',
+      sub: 'Cada grado tiene un profesor titular, un plan de materias propio y su propio grupo',
+      cuerpo: tabla([
+        { clave: 'grado', titulo: 'Grado', html: true },
+        { clave: 'nivel', titulo: 'Nivel', html: true },
+        { clave: 'tutor', titulo: 'Titular del grupo', html: true },
+        { clave: 'alumnos', titulo: 'Alumnos', html: true },
+        { clave: 'materias', titulo: 'Materias', align: 'num', html: true },
+        { clave: 'promedio', titulo: 'Promedio', align: 'num', html: true },
+        { clave: 'asistencia', titulo: 'Asistencia', align: 'num', html: true },
+        { clave: 'acciones', titulo: '', align: 'num', html: true }
+      ], filas, 'Todavía no hay grados registrados.')
+    }) + '</div>');
+
+    h.push('<div class="col-6">' + U.panel({
+      titulo: 'Promedio por grado',
+      sub: 'Meta institucional: 8.0',
+      cuerpo: U.barras({
+        series: (Q.grados() || []).map(function (g) {
+          var r = Q.resumenGrado(g.id);
+          var nv = r.nivel;
+          return {
+            etiqueta: g.corto,
+            valor: r.promedio === null ? 0 : r.promedio,
+            color: (nv && nv.color) || 'var(--marca)'
+          };
+        }),
+        max: 10, meta: 8, formato: U.notaTexto
+      })
+    }) + '</div>');
+
+    h.push('<div class="col-6">' + U.panel({
+      titulo: 'Asistencia por grado',
+      sub: 'Umbral de alerta: 80%',
+      cuerpo: U.barras({
+        series: (Q.grados() || []).map(function (g) {
+          var r = Q.resumenGrado(g.id);
+          return {
+            etiqueta: g.corto,
+            valor: r.asistencia,
+            color: r.asistencia >= 90 ? 'var(--ok)' : (r.asistencia >= 80 ? 'var(--aviso)' : 'var(--crit)')
+          };
+        }),
+        max: 100, meta: 90, formato: fmtPct
+      })
+    }) + '</div>');
+
+    return U.seccion({
+      titulo: 'Grados',
+      sub: 'De 1º de preescolar a 3º de bachillerato: titular, matrícula y resultados de cada grupo',
+      cuerpo: '<div class="rejilla">' + h.join('') + '</div>'
+    });
   }
 
   /* =========================================================== FINANZAS ==== */
@@ -1193,9 +1413,9 @@ const VistaDireccion = (function () {
     }) + '</div>');
 
     h.push('<div class="col-6">' + U.panel({
-      titulo: 'Promedio por materia',
-      sub: 'Meta institucional: 8.0',
-      cuerpo: graficaPromedioMaterias()
+      titulo: 'Promedio por grado',
+      sub: 'Los quince grupos del colegio · meta institucional: 8.0',
+      cuerpo: graficaPromedioGrados()
     }) + '</div>');
 
     h.push('<div class="col-6">' + U.panel({
@@ -1210,12 +1430,12 @@ const VistaDireccion = (function () {
     }) + '</div>');
 
     h.push('<div class="col-6">' + U.panel({
-      titulo: 'Asistencia por materia',
+      titulo: 'Asistencia por grado',
       sub: 'Umbral de alerta: 80%',
       cuerpo: U.barras({
-        series: activas.map(function (m) {
-          var p = asistenciaDeMateria(m.id);
-          return { etiqueta: m.nombre, valor: p, color: p >= 90 ? 'var(--ok)' : (p >= 80 ? 'var(--aviso)' : 'var(--crit)') };
+        series: (Q.grados() || []).map(function (g) {
+          var p = Q.resumenGrado(g.id).asistencia;
+          return { etiqueta: g.corto, valor: p, color: p >= 90 ? 'var(--ok)' : (p >= 80 ? 'var(--aviso)' : 'var(--crit)') };
         }),
         max: 100, meta: 90, formato: fmtPct
       })
@@ -1250,12 +1470,19 @@ const VistaDireccion = (function () {
       ], filasProf, 'Sin claustro registrado.')
     }) + '</div>');
 
-    /* Avance de captura */
-    var filasCap = activas.map(function (m) {
-      var c = capturaMateria(m);
+    /* Avance de captura: sólo lo que falta, que es lo que hay que perseguir. */
+    var pendientes = activas.map(function (m) {
+      return { m: m, c: capturaMateria(m) };
+    }).filter(function (x) { return x.c.pct < 100; })
+      .sort(function (a, b) { return a.c.pct - b.c.pct; });
+
+    var filasCap = pendientes.map(function (x) {
+      var m = x.m;
+      var c = x.c;
       var pr = Q.profesor(m.profesorId);
       return {
-        materia: '<div><strong>' + esc(m.nombre) + '</strong><div><small class="silencio mono">' + esc(m.codigo) + '</small></div></div>',
+        materia: '<div><strong>' + esc(m.nombre) + '</strong><div><small class="silencio mono">' +
+          esc(m.codigo) + ' · ' + esc(nombreGrado(m.gradoId)) + '</small></div></div>',
         profesor: esc(pr ? pr.nombre : '—'),
         esperado: '<span class="mono">' + c.hechas + ' / ' + c.esperadas + '</span>' +
           '<div><small class="silencio">' + c.debidas + ' de ' + c.evaluaciones + ' evaluaciones ya aplicadas</small></div>',
@@ -1267,9 +1494,12 @@ const VistaDireccion = (function () {
     });
 
     h.push('<div class="col-12">' + U.panel({
-      titulo: 'Avance de captura de calificaciones',
-      sub: 'Notas capturadas sobre las esperadas al ' + U.fecha(isoHoy(), 'larga') +
-        ' — sólo cuentan las evaluaciones cuya fecha ya pasó',
+      titulo: 'Materias con captura pendiente',
+      sub: pendientes.length
+        ? pendientes.length + ' de ' + activas.length + ' materias no tienen al día las evaluaciones ' +
+          'aplicadas al ' + U.fecha(isoHoy(), 'larga')
+        : 'Las ' + activas.length + ' materias del colegio están al corriente al ' +
+          U.fecha(isoHoy(), 'larga'),
       cuerpo: tabla([
         { clave: 'materia', titulo: 'Materia', html: true },
         { clave: 'profesor', titulo: 'Imparte', html: true },
@@ -1277,7 +1507,7 @@ const VistaDireccion = (function () {
         { clave: 'avance', titulo: 'Avance', html: true },
         { clave: 'ciclo', titulo: 'Total del ciclo', align: 'num', html: true },
         { clave: 'estado', titulo: 'Estado', html: true }
-      ], filasCap, 'No hay materias activas.')
+      ], filasCap, 'Ninguna materia tiene captura pendiente: el claustro va al corriente.')
     }) + '</div>');
 
     return U.seccion({
@@ -1434,6 +1664,7 @@ const VistaDireccion = (function () {
     var e = DB.escuela;
     var d = DB.direccion;
     var conteos = [
+      ['Niveles', (DB.niveles || []).length], ['Grados', (DB.grados || []).length],
       ['Alumnos', DB.alumnos.length], ['Personas docentes', DB.profesores.length],
       ['Materias', DB.materias.length], ['Inscripciones', DB.inscripciones.length],
       ['Evaluaciones', DB.evaluaciones.length], ['Calificaciones', DB.calificaciones.length],
@@ -1449,7 +1680,10 @@ const VistaDireccion = (function () {
         campo({ nombre: 'lema', etiqueta: 'Lema', valor: e.lema, col: 'col-6', id: 'es-lema' }) +
         campo({ nombre: 'ciclo', etiqueta: 'Ciclo escolar', valor: e.ciclo, requerido: true, col: 'col-4', id: 'es-ciclo' }) +
         campo({ nombre: 'telefono', tipo: 'tel', etiqueta: 'Teléfono', valor: e.telefono, col: 'col-4', id: 'es-tel' }) +
+        campo({ nombre: 'telefono2', tipo: 'tel', etiqueta: 'Segundo teléfono', valor: e.telefono2, col: 'col-4', id: 'es-tel2' }) +
+        campo({ nombre: 'whatsapp', tipo: 'tel', etiqueta: 'WhatsApp', valor: e.whatsapp, col: 'col-4', id: 'es-wa' }) +
         campo({ nombre: 'email', tipo: 'email', etiqueta: 'Correo de contacto', valor: e.email, col: 'col-4', id: 'es-mail' }) +
+        campo({ nombre: 'buzon', tipo: 'email', etiqueta: 'Buzón «te escuchamos»', valor: e.buzon, col: 'col-4', id: 'es-buzon' }) +
         campo({ nombre: 'direccion', etiqueta: 'Dirección', valor: e.direccion, col: 'col-8', id: 'es-dir' }) +
         campo({ nombre: 'ciudad', etiqueta: 'Ciudad', valor: e.ciudad, col: 'col-4', id: 'es-ciu' }) +
         campo({ nombre: 'sitio', etiqueta: 'Sitio', valor: e.sitio, col: 'col-4', id: 'es-sitio' }) +
@@ -1457,6 +1691,7 @@ const VistaDireccion = (function () {
         campo({ nombre: 'colegiaturaMensual', tipo: 'number', etiqueta: 'Colegiatura mensual (MXN)', valor: num(e.colegiaturaMensual), min: 0, paso: 50, col: 'col-6', id: 'es-col' }) +
         campo({ nombre: 'recargoPct', tipo: 'number', etiqueta: 'Recargo por mora (%)', valor: num(e.recargoPct), min: 0, max: 50, col: 'col-6', id: 'es-rec' }) +
         campo({ nombre: 'mision', tipo: 'area', filas: 2, etiqueta: 'Misión', valor: e.mision, col: 'col-12', id: 'es-mis' }) +
+        campo({ nombre: 'vision', tipo: 'area', filas: 2, etiqueta: 'Visión', valor: e.vision, col: 'col-12', id: 'es-vis' }) +
         campo({ nombre: 'acercaDe', tipo: 'area', filas: 5, etiqueta: 'Descripción para el sitio público', valor: e.acercaDe, col: 'col-12', id: 'es-desc' }),
       acciones: '<a class="btn" href="#/publico">' + U.icono('ojo', 15) + ' Ver el sitio público</a>' + btnEnviar('Guardar y publicar')
     });
@@ -1486,6 +1721,34 @@ const VistaDireccion = (function () {
         '<a class="btn btn-suave btn-bloque mt-2" href="#/publico">' + U.icono('liga', 15) + ' Abrir el sitio público</a>'
     }) + '</div>');
 
+    /* Niveles: aquí se ve de dónde sale la colegiatura de cada alumno. */
+    var filasNiv = (Q.resumenNiveles() || []).map(function (f) {
+      return {
+        nivel: '<div><strong>' + esc(f.nivel.nombre) + '</strong>' +
+          '<div><small class="silencio">' + esc(f.nivel.edades) + '</small></div></div>',
+        grados: '<span class="mono">' + f.grados + '</span>',
+        alumnos: '<span class="mono">' + f.alumnos + '</span>',
+        materias: '<span class="mono">' + f.materias + '</span>',
+        inscripcion: '<span class="mono">' + U.moneda(num(f.nivel.inscripcion)) + '</span>',
+        colegiatura: '<span class="mono">' + U.moneda(num(f.nivel.colegiatura)) + '</span>',
+        certificacion: '<small class="silencio">' + esc(f.nivel.certificacion) + '</small>'
+      };
+    });
+
+    h.push('<div class="col-12">' + U.panel({
+      titulo: 'Niveles educativos',
+      sub: 'La colegiatura de cada alumno sale de su nivel, con su beca aplicada encima',
+      cuerpo: tabla([
+        { clave: 'nivel', titulo: 'Nivel', html: true },
+        { clave: 'grados', titulo: 'Grados', align: 'num', html: true },
+        { clave: 'alumnos', titulo: 'Alumnos', align: 'num', html: true },
+        { clave: 'materias', titulo: 'Materias', align: 'num', html: true },
+        { clave: 'inscripcion', titulo: 'Inscripción', align: 'num', html: true },
+        { clave: 'colegiatura', titulo: 'Colegiatura', align: 'num', html: true },
+        { clave: 'certificacion', titulo: 'Certificación', html: true }
+      ], filasNiv, 'Sin niveles registrados.')
+    }) + '</div>');
+
     h.push('<div class="col-12">' + U.panel({
       titulo: 'Datos de la demostración',
       sub: 'Todo vive en este navegador; nada sale de tu equipo',
@@ -1495,7 +1758,7 @@ const VistaDireccion = (function () {
         '<div class="separador"></div>' +
         '<div class="entre envuelve">' +
         '<div class="crece"><strong>Reiniciar la demostración</strong>' +
-        '<div class="silencio"><small>Vuelve a sembrar los datos originales del Colegio Altamira.</small></div></div>' +
+        '<div class="silencio"><small>Vuelve a sembrar los datos originales de The Livingstone.</small></div></div>' +
         '<button type="button" class="btn btn-peligro" data-accion="dir:pedirReinicio">' +
         U.icono('alerta', 15) + ' Reiniciar demostración</button>' +
         '</div>'
@@ -1635,6 +1898,28 @@ const VistaDireccion = (function () {
       estado.foco = null;
       App.refrescar();
     },
+    /* Cambiar de nivel deja sin sentido el grado elegido: se limpia. */
+    'dir:filtroNivel': function (args, ev, el) {
+      estado.fNivel = el.value;
+      estado.fGrado = 'todos';
+      estado.foco = null;
+      App.refrescar();
+    },
+    'dir:filtroGrado': function (args, ev, el) {
+      estado.fGrado = el.value;
+      estado.foco = null;
+      App.refrescar();
+    },
+    'dir:filtroNivelMateria': function (args, ev, el) {
+      estado.fNivelMateria = el.value;
+      estado.foco = null;
+      App.refrescar();
+    },
+    'dir:horarioGrado': function (args, ev, el) {
+      estado.gradoHorario = el.value;
+      estado.foco = null;
+      App.refrescar();
+    },
     'dir:nuevoAlumno': function () { modalAlumno(null); },
     'dir:editarAlumno': function (args) {
       var a = Q.alumno(args.id);
@@ -1736,6 +2021,7 @@ const VistaDireccion = (function () {
       var datos = {
         codigo: String(d.codigo || '').trim().toUpperCase(),
         nombre: String(d.nombre || '').trim(),
+        gradoId: String(d.gradoId || '').trim(),
         profesorId: d.profesorId,
         creditos: num(d.creditos),
         aula: String(d.aula || '').trim(),
@@ -1746,6 +2032,7 @@ const VistaDireccion = (function () {
       };
       if (datos.codigo.length < 3) { U.toast('El código de la materia es demasiado corto.', 'crit'); return; }
       if (datos.nombre.length < 4) { U.toast('Escribe el nombre completo de la materia.', 'crit'); return; }
+      if (!Q.grado(datos.gradoId)) { U.toast('Elige el grado escolar de la materia.', 'crit'); return; }
       if (!datos.profesorId) { U.toast('Asigna una persona docente.', 'crit'); return; }
       if (datos.cupo < 1) { U.toast('El cupo debe ser al menos de una persona.', 'crit'); return; }
       if (d.dia && d.inicio && d.fin) {
@@ -1877,12 +2164,16 @@ const VistaDireccion = (function () {
         direccion: String(d.direccion || '').trim(),
         ciudad: String(d.ciudad || '').trim(),
         telefono: String(d.telefono || '').trim(),
+        telefono2: String(d.telefono2 || '').trim(),
+        whatsapp: String(d.whatsapp || '').trim(),
         email: String(d.email || '').trim(),
+        buzon: String(d.buzon || '').trim(),
         sitio: String(d.sitio || '').trim(),
         horarioAtencion: String(d.horarioAtencion || '').trim(),
         colegiaturaMensual: num(d.colegiaturaMensual),
         recargoPct: num(d.recargoPct),
         mision: String(d.mision || '').trim(),
+        vision: String(d.vision || '').trim(),
         acercaDe: String(d.acercaDe || '').trim()
       }), 'Datos del colegio actualizados en el sitio público.');
     },
@@ -1896,7 +2187,7 @@ const VistaDireccion = (function () {
       U.confirmar({
         titulo: 'Reiniciar la demostración',
         texto: 'Se borra todo lo capturado en este navegador —alumnos, materias, calificaciones, pagos, ' +
-          'reseñas y avisos nuevos— y se vuelve a sembrar el Colegio Altamira original. ' +
+          'reseñas y avisos nuevos— y se vuelve a sembrar The Livingstone original. ' +
           'Los cambios que hayas hecho se pierden y no hay manera de recuperarlos.',
         textoOk: 'Sí, reiniciar todo',
         peligro: true,
@@ -1912,6 +2203,7 @@ const VistaDireccion = (function () {
 
     nav: [
       { id: 'resumen', texto: 'Resumen', icono: 'casa' },
+      { id: 'grados', texto: 'Grados', icono: 'escudo' },
       { id: 'alumnos', texto: 'Alumnos', icono: 'usuarios' },
       { id: 'profesores', texto: 'Profesores', icono: 'birrete' },
       { id: 'materias', texto: 'Materias', icono: 'libro' },
@@ -1927,6 +2219,13 @@ const VistaDireccion = (function () {
       var params = (ctx && ctx.params) || {};
       if (estado.seccion !== sec) { estado.seccion = sec; estado.foco = null; }
 
+      /* «Ver grupo» llega con ?grado=…: deja el padrón ya filtrado. */
+      if (sec === 'alumnos' && params.grado && params.grado !== estado.fGrado) {
+        var gp = Q.grado(params.grado);
+        if (gp) { estado.fGrado = gp.id; estado.fNivel = gp.nivelId; }
+      }
+
+      if (sec === 'grados') return seccionGrados();
       if (sec === 'alumnos') return params.id ? expediente(params.id) : seccionAlumnos();
       if (sec === 'profesores') return params.id ? fichaProfesor(params.id) : seccionProfesores();
       if (sec === 'materias') return seccionMaterias();

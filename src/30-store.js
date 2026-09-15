@@ -1,5 +1,5 @@
 /* ============================================================================
-   30-store.js — Núcleo de datos de Colegio Altamira.
+   30-store.js — Núcleo de datos de The Livingstone.
    Declara: var DB, const HOY, const Store, const Sesion, const Q, const M
    Estado, persistencia, sesión, selectores puros y mutaciones validadas.
    ========================================================================== */
@@ -15,9 +15,10 @@ var DB;
 /* ---------------------------------------------------------------- Store --- */
 const Store = (function () {
 
-  var CLAVE_DB = 'altamira.db.v3';
+  var CLAVE_DB = 'livingstone.db.v4';
   var suscriptores = [];
   var COLECCIONES = [
+    'niveles', 'grados',
     'alumnos', 'profesores', 'materias', 'inscripciones', 'evaluaciones',
     'calificaciones', 'asistencias', 'tareas', 'entregas', 'materiales',
     'avisos', 'pagos', 'resenas', 'bitacora'
@@ -113,7 +114,7 @@ const Store = (function () {
 /* --------------------------------------------------------------- Sesion --- */
 const Sesion = (function () {
 
-  var CLAVE = 'altamira.sesion';
+  var CLAVE = 'livingstone.sesion';
   var cache = null;
   var leida = false;
 
@@ -223,6 +224,139 @@ const Q = (function () {
 
     alumnosActivos: function () {
       return DB.alumnos.filter(function (a) { return a.estatus !== 'baja'; });
+    },
+
+    /* ----------------------------------------------------- niveles y grados */
+    nivel: function (id) {
+      return (DB.niveles || []).filter(function (n) { return n.id === id; })[0] || null;
+    },
+    grado: function (id) {
+      return (DB.grados || []).filter(function (g) { return g.id === id; })[0] || null;
+    },
+
+    /* Niveles de preescolar a bachillerato, en orden escolar. */
+    niveles: function () {
+      return (DB.niveles || []).slice().sort(function (a, b) { return num(a.orden) - num(b.orden); });
+    },
+
+    /* Grados del colegio, o sólo los de un nivel, en orden escolar. */
+    grados: function (nivelId) {
+      var orden = {};
+      Q.niveles().forEach(function (n, i) { orden[n.id] = i; });
+      return (DB.grados || [])
+        .filter(function (g) { return !nivelId || g.nivelId === nivelId; })
+        .slice()
+        .sort(function (a, b) {
+          var d = (orden[a.nivelId] || 0) - (orden[b.nivelId] || 0);
+          return d !== 0 ? d : num(a.numero) - num(b.numero);
+        });
+    },
+
+    gradoDeAlumno: function (alumnoId) {
+      var a = Q.alumno(alumnoId);
+      return a ? Q.grado(a.gradoId) : null;
+    },
+
+    nivelDeGrado: function (gradoId) {
+      var g = Q.grado(gradoId);
+      return g ? Q.nivel(g.nivelId) : null;
+    },
+
+    nivelDeAlumno: function (alumnoId) {
+      var g = Q.gradoDeAlumno(alumnoId);
+      return g ? Q.nivel(g.nivelId) : null;
+    },
+
+    /* '4º de Primaria · grupo A' — texto listo para pintar. */
+    etiquetaGrado: function (gradoId) {
+      var g = Q.grado(gradoId);
+      if (!g) return '—';
+      return txt(g.etiqueta) + (g.grupo ? ' · grupo ' + g.grupo : '');
+    },
+
+    alumnosDeGrado: function (gradoId) {
+      return DB.alumnos.filter(function (a) { return a.gradoId === gradoId; }).sort(porNombre);
+    },
+
+    materiasDeGrado: function (gradoId) {
+      return DB.materias
+        .filter(function (m) { return m.gradoId === gradoId && m.estatus === 'activa'; })
+        .sort(porNombre);
+    },
+
+    /* Grados en los que un docente imparte al menos una materia activa. */
+    gradosDeProfesor: function (profesorId) {
+      var vistos = {};
+      Q.materiasDeProfesor(profesorId).forEach(function (m) {
+        if (m.estatus === 'activa') vistos[m.gradoId] = true;
+      });
+      return Q.grados().filter(function (g) { return vistos[g.id]; });
+    },
+
+    /* Promedio, asistencia y tamaño de un grupo. */
+    resumenGrado: function (gradoId) {
+      var g = Q.grado(gradoId);
+      var als = Q.alumnosDeGrado(gradoId).filter(function (a) { return a.estatus !== 'baja'; });
+      var proms = [];
+      var presentes = 0;
+      var totales = 0;
+      als.forEach(function (a) {
+        var p = Q.promedioGeneral(a.id);
+        if (p !== null) proms.push(p);
+        var s = Q.asistencia(a.id);
+        presentes += s.presentes;
+        totales += s.totales;
+      });
+      var suma = proms.reduce(function (x, y) { return x + y; }, 0);
+      return {
+        grado: g,
+        nivel: g ? Q.nivel(g.nivelId) : null,
+        tutor: g ? Q.profesor(g.tutorId) : null,
+        alumnos: als.length,
+        materias: Q.materiasDeGrado(gradoId).length,
+        promedio: proms.length ? red1(suma / proms.length) : null,
+        asistencia: totales > 0 ? Math.round(presentes / totales * 100) : 0
+      };
+    },
+
+    /* Un renglón por nivel: alumnos, grados, promedio y colegiatura. */
+    resumenNiveles: function () {
+      return Q.niveles().map(function (n) {
+        var grados = Q.grados(n.id);
+        var proms = [];
+        var alumnos = 0;
+        var presentes = 0;
+        var totales = 0;
+        grados.forEach(function (g) {
+          Q.alumnosDeGrado(g.id).forEach(function (a) {
+            if (a.estatus === 'baja') return;
+            alumnos++;
+            var p = Q.promedioGeneral(a.id);
+            if (p !== null) proms.push(p);
+            var s = Q.asistencia(a.id);
+            presentes += s.presentes;
+            totales += s.totales;
+          });
+        });
+        var suma = proms.reduce(function (x, y) { return x + y; }, 0);
+        return {
+          nivel: n,
+          grados: grados.length,
+          alumnos: alumnos,
+          materias: DB.materias.filter(function (m) { return m.nivelId === n.id && m.estatus === 'activa'; }).length,
+          promedio: proms.length ? red1(suma / proms.length) : null,
+          asistencia: totales > 0 ? Math.round(presentes / totales * 100) : 0
+        };
+      });
+    },
+
+    /* Colegiatura mensual que le toca a un alumno según su nivel y su beca. */
+    colegiaturaDe: function (alumnoId) {
+      var a = Q.alumno(alumnoId);
+      var n = Q.nivelDeAlumno(alumnoId);
+      var base = (n && num(n.colegiatura)) || num(DB.escuela.colegiaturaMensual);
+      var beca = a ? num(a.becaPct) : 0;
+      return Math.round(base * (1 - beca / 100));
     },
 
     /* ------------------------------------------------------------ relaciones */
@@ -537,6 +671,8 @@ const Q = (function () {
         alumnos: activos.length,
         profesores: DB.profesores.filter(function (p) { return p.estatus !== 'baja'; }).length,
         materias: DB.materias.filter(function (m) { return m.estatus === 'activa'; }).length,
+        grados: (DB.grados || []).length,
+        niveles: (DB.niveles || []).length,
         promedioGeneral: proms.length ? red1(sumaProm / proms.length) : null,
         asistencia: totales > 0 ? Math.round(presentes / totales * 100) : 0,
         cobrado: cobrado,
@@ -749,7 +885,7 @@ const M = (function () {
     return base.replace(/[^a-z0-9.]/g, '') + '@' + dominio;
   }
 
-  function dominio() { return texto(DB.escuela.sitio) || 'colegioaltamira.mx'; }
+  function dominio() { return texto(DB.escuela.sitio) || 'colegiodlivingstone.edu.mx'; }
 
   function siguienteFolio(lista, campo, prefijo) {
     var max = 0;
@@ -773,6 +909,67 @@ const M = (function () {
   function actorId(alterno) {
     var s = Sesion.actual();
     return s ? s.id : (alterno || 'dir-01');
+  }
+
+  /* Deja a un alumno inscrito exactamente en el plan de estudios de su grado:
+     da de alta lo que le falta, retira lo que ya no le toca y abre su
+     asistencia y sus entregas pendientes. No escribe en la bitácora: quien la
+     llama ya cuenta la historia completa. */
+  function sincronizarGrado(alumno) {
+    var hoy = hoyISO();
+    var delGrado = DB.materias.filter(function (m) {
+      return m.gradoId === alumno.gradoId && m.estatus === 'activa';
+    });
+    var suyas = {};
+    delGrado.forEach(function (m) { suyas[m.id] = true; });
+
+    /* Lo que ya no corresponde a su grado se retira con todo su rastro. */
+    var fuera = {};
+    DB.inscripciones.forEach(function (i) {
+      if (i.alumnoId === alumno.id && !suyas[i.materiaId]) fuera[i.materiaId] = true;
+    });
+    if (Object.keys(fuera).length) {
+      var evs = {};
+      DB.evaluaciones.forEach(function (e) { if (fuera[e.materiaId]) evs[e.id] = true; });
+      var tars = {};
+      DB.tareas.forEach(function (t) { if (fuera[t.materiaId]) tars[t.id] = true; });
+      quitar(DB.inscripciones, function (i) { return i.alumnoId === alumno.id && fuera[i.materiaId]; });
+      quitar(DB.calificaciones, function (c) { return c.alumnoId === alumno.id && evs[c.evaluacionId]; });
+      quitar(DB.entregas, function (e) { return e.alumnoId === alumno.id && tars[e.tareaId]; });
+      quitar(DB.asistencias, function (a) { return a.alumnoId === alumno.id && fuera[a.materiaId]; });
+    }
+
+    /* Y se da de alta lo que le falta del plan nuevo. */
+    var altas = 0;
+    delGrado.forEach(function (m) {
+      var ya = DB.inscripciones.filter(function (i) {
+        return i.alumnoId === alumno.id && i.materiaId === m.id;
+      })[0];
+      if (!ya) {
+        DB.inscripciones.push({ id: Store.uid('ins'), alumnoId: alumno.id, materiaId: m.id });
+        altas++;
+      }
+      var tieneAsistencia = DB.asistencias.filter(function (a) {
+        return a.alumnoId === alumno.id && a.materiaId === m.id;
+      })[0];
+      if (!tieneAsistencia) {
+        DB.asistencias.push({
+          id: Store.uid('as'), alumnoId: alumno.id, materiaId: m.id, presentes: 0, totales: 0
+        });
+      }
+    });
+
+    /* Entregas pendientes sólo de lo que todavía no vence. */
+    DB.tareas.forEach(function (t) {
+      if (!suyas[t.materiaId] || texto(t.vence) < hoy) return;
+      if (Q.entrega(t.id, alumno.id)) return;
+      DB.entregas.push({
+        id: Store.uid('ent'), tareaId: t.id, alumnoId: alumno.id,
+        estado: 'pendiente', fecha: null, calificacion: null
+      });
+    });
+
+    return { altas: altas, bajas: Object.keys(fuera).length };
   }
 
   var api = {
@@ -915,10 +1112,13 @@ const M = (function () {
       var profesor = Q.profesor(texto(d.profesorId));
       if (!profesor) return mal('Elige una persona docente válida.');
 
+      var grado = Q.grado(texto(d.gradoId));
+      if (!grado) return mal('Elige el grado escolar al que pertenece la materia.');
+
       var creditos = aNumero(d.creditos);
       if (isNaN(creditos) || creditos <= 0) creditos = 5;
       var cupo = aNumero(d.cupo);
-      if (isNaN(cupo) || cupo <= 0) cupo = 24;
+      if (isNaN(cupo) || cupo <= 0) cupo = grado.cupo || 24;
 
       var horario = aHorario(d.horario);
       if (!horario && !vacio(d.dia) && !vacio(d.inicio)) {
@@ -929,19 +1129,36 @@ const M = (function () {
         id: Store.uid('mat'),
         codigo: codigo,
         nombre: texto(d.nombre),
+        gradoId: grado.id,
+        nivelId: grado.nivelId,
         profesorId: profesor.id,
         creditos: Math.round(creditos),
-        aula: texto(d.aula) || 'Por asignar',
+        aula: texto(d.aula) || grado.aula || 'Por asignar',
         cupo: Math.round(cupo),
         horario: horario || [],
+        sesiones: (horario || []).length,
+        area: texto(d.area) || 'general',
         descripcion: texto(d.descripcion),
         color: texto(d.color) || colorDe(DB.materias.length),
         estatus: 'activa'
       };
       DB.materias.push(materia);
-      Store.bitacora('Dio de alta la materia ' + materia.codigo + ' — ' + materia.nombre + '.');
+
+      /* La materia forma parte del plan del grado: entra todo el grupo. */
+      var inscritos = 0;
+      Q.alumnosDeGrado(grado.id).forEach(function (a) {
+        if (a.estatus === 'baja') return;
+        DB.inscripciones.push({ id: Store.uid('ins'), alumnoId: a.id, materiaId: materia.id });
+        DB.asistencias.push({
+          id: Store.uid('as'), alumnoId: a.id, materiaId: materia.id, presentes: 0, totales: 0
+        });
+        inscritos++;
+      });
+
+      Store.bitacora('Dio de alta la materia ' + materia.codigo + ' — ' + materia.nombre +
+        ' en ' + grado.etiqueta + ', con ' + inscritos + ' alumnos inscritos.');
       Store.guardar();
-      return bien({ id: materia.id });
+      return bien({ id: materia.id, inscritos: inscritos });
     },
 
     actualizarMateria: function (id, datos) {
@@ -979,6 +1196,12 @@ const M = (function () {
         if (cupo < inscritos) return mal('El cupo no puede ser menor que las ' + inscritos + ' personas ya inscritas.');
         materia.cupo = Math.round(cupo);
       }
+      if (d.gradoId !== undefined && !vacio(d.gradoId)) {
+        var destino = Q.grado(texto(d.gradoId));
+        if (!destino) return mal('Ese grado escolar no existe.');
+        materia.gradoId = destino.id;
+        materia.nivelId = destino.nivelId;
+      }
       if (d.aula !== undefined) materia.aula = texto(d.aula);
       if (d.descripcion !== undefined) materia.descripcion = texto(d.descripcion);
       if (d.color !== undefined && !vacio(d.color)) materia.color = texto(d.color);
@@ -988,7 +1211,10 @@ const M = (function () {
         materia.estatus = estatus;
       }
       var horario = aHorario(d.horario);
-      if (horario) materia.horario = horario;
+      if (horario) {
+        materia.horario = horario;
+        materia.sesiones = horario.length;
+      }
 
       Store.bitacora('Actualizó la materia ' + materia.codigo + ' — ' + materia.nombre + '.');
       Store.guardar();
@@ -1090,13 +1316,17 @@ const M = (function () {
       var estatus = texto(d.estatus) || 'activo';
       if (ESTATUS_ALUMNO.indexOf(estatus) < 0) estatus = 'activo';
 
+      var grado = Q.grado(texto(d.gradoId));
+      if (!grado) return mal('Elige el grado escolar al que entra.');
+
       var nombre = texto(d.nombre);
       var tutor = d.tutor || {};
       var alumno = {
         id: Store.uid('al'),
         rol: 'alumno',
-        matricula: 'A-' + siguienteFolio(DB.alumnos, 'matricula', 'A-'),
+        matricula: 'L-' + siguienteFolio(DB.alumnos, 'matricula', 'L-'),
         nombre: nombre,
+        gradoId: grado.id,
         email: texto(d.email) || correoDe(nombre, 'alumnos.' + dominio()),
         foto: null,
         iniciales: iniciales(nombre),
@@ -1115,9 +1345,11 @@ const M = (function () {
         notas: texto(d.notas)
       };
       DB.alumnos.push(alumno);
-      Store.bitacora('Dio de alta a ' + alumno.nombre + ' con matrícula ' + alumno.matricula + '.');
+      var alta = sincronizarGrado(alumno);
+      Store.bitacora('Dio de alta a ' + alumno.nombre + ' con matrícula ' + alumno.matricula +
+        ' en ' + grado.etiqueta + ', con sus ' + alta.altas + ' materias del plan.');
       Store.guardar();
-      return bien({ id: alumno.id, matricula: alumno.matricula });
+      return bien({ id: alumno.id, matricula: alumno.matricula, materias: alta.altas });
     },
 
     actualizarAlumno: function (id, datos) {
@@ -1138,6 +1370,14 @@ const M = (function () {
       if (d.nacimiento !== undefined) {
         if (!vacio(d.nacimiento) && !esISO(d.nacimiento)) return mal('La fecha de nacimiento debe ser AAAA-MM-DD.');
         alumno.nacimiento = texto(d.nacimiento);
+      }
+      /* Cambiar de grado rehace la inscripción con el plan del grado nuevo. */
+      var cambioGrado = null;
+      if (d.gradoId !== undefined && texto(d.gradoId) !== texto(alumno.gradoId)) {
+        var destino = Q.grado(texto(d.gradoId));
+        if (!destino) return mal('Ese grado escolar no existe.');
+        cambioGrado = destino;
+        alumno.gradoId = destino.id;
       }
       if (d.ingreso !== undefined) {
         if (!esISO(d.ingreso)) return mal('La fecha de ingreso debe ser AAAA-MM-DD.');
@@ -1168,7 +1408,13 @@ const M = (function () {
         };
       }
 
-      Store.bitacora('Actualizó el expediente de ' + alumno.nombre + '.');
+      if (cambioGrado) {
+        var mov = sincronizarGrado(alumno);
+        Store.bitacora('Cambió a ' + alumno.nombre + ' a ' + cambioGrado.etiqueta +
+          ': ' + mov.altas + ' materias nuevas y ' + mov.bajas + ' dadas de baja.');
+      } else {
+        Store.bitacora('Actualizó el expediente de ' + alumno.nombre + '.');
+      }
       Store.guardar();
       return bien({ id: alumno.id });
     },
@@ -1516,18 +1762,18 @@ const M = (function () {
           return p.alumnoId === a.id && texto(p.periodo) === per;
         })[0];
         if (ya) return;
-        var beca = Number(a.becaPct) || 0;
+        /* Cada nivel tiene su propia cuota; la beca se aplica sobre ella. */
         DB.pagos.push({
           id: Store.uid('pag'),
           alumnoId: a.id,
           concepto: concepto,
           periodo: per,
-          monto: Math.round(base * (1 - beca / 100)),
+          monto: Q.colegiaturaDe(a.id),
           vence: vence,
           estado: 'pendiente',
           pagadoEl: null,
           metodo: null,
-          referencia: 'ALT-' + per.replace('-', '') + '-' + texto(a.matricula).replace('A-', ''),
+          referencia: 'TLV-' + per.replace('-', '') + '-' + texto(a.matricula).replace('L-', ''),
           recargo: 0
         });
         generados++;
@@ -1628,8 +1874,9 @@ const M = (function () {
     /* ---------------------------------------------------------------- escuela */
     actualizarEscuela: function (datos) {
       var d = datos || {};
-      var cadenas = ['nombre', 'lema', 'ciclo', 'direccion', 'ciudad', 'telefono', 'email',
-        'sitio', 'horarioAtencion', 'acercaDe', 'mision', 'sello', 'diasHabiles', 'moneda'];
+      var cadenas = ['nombre', 'nombreLargo', 'lema', 'ciclo', 'direccion', 'ciudad', 'telefono',
+        'telefono2', 'whatsapp', 'email', 'buzon', 'sitio', 'horarioAtencion', 'acercaDe',
+        'mision', 'vision', 'excelencia', 'sello', 'diasHabiles', 'moneda'];
       if (d.nombre !== undefined && vacio(d.nombre)) return mal('El nombre de la escuela no puede quedar vacío.');
 
       if (d.colegiaturaMensual !== undefined) {
