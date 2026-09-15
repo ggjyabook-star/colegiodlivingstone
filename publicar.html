@@ -808,6 +808,10 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 }
 .bloque .intro { color: var(--tinta-2); max-width: 60ch; margin: 0 0 1.5rem; }
 
+/* El botón sólo aparece en pantalla angosta, y sólo mientras haya algo que
+   desplegar: la regla que lo enciende vive en el bloque de teléfono. */
+.mas-claustro { display: none; margin-top: .9rem; }
+
 .claustro { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.1rem; }
 .claustro-item {
   background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
@@ -1039,6 +1043,10 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 
   /* En el claustro, las especialidades caben en el perfil: aquí estorban. */
   .claustro-item .chip { display: none; }
+
+  /* Catorce perfiles seguidos son un muro: se abren tres y el resto se pide. */
+  .claustro:not(.abierto) .claustro-item:nth-child(n+4) { display: none; }
+  .claustro:not(.abierto) + .mas-claustro { display: block; }
 
   .sitio-pie { padding: 1.6rem 1.1rem; }
   .sitio-pie .interior { gap: 1.1rem; }
@@ -5592,6 +5600,9 @@ const VistaPublica = (function () {
   var anclaPendiente = '';
   /* Última ruta montada, para decidir si conviene subir el scroll. */
   var ultimaClave = '';
+  /* En pantalla angosta el claustro abre con tres perfiles; el resto se pide. */
+  var CLAUSTRO_VISIBLE = 3;
+  var claustroAbierto = false;
 
   /* Reinicios mínimos para usar <button> con apariencia de bloque. */
   var RESET_BOTON  = 'border:0;font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer';
@@ -6067,7 +6078,16 @@ const VistaPublica = (function () {
           que dejaron sus alumnos.
         </p>
         ${docentes.length
-          ? '<div class="claustro">' + docentes.map(tarjetaDocente).join('') + '</div>'
+          ? '<div class="claustro' + (claustroAbierto ? ' abierto' : '') + '">' +
+            docentes.map(tarjetaDocente).join('') + '</div>' +
+            /* En teléfono sólo se ven los tres primeros; el resto se pide. */
+            (docentes.length > CLAUSTRO_VISIBLE
+              ? '<div class="mas-claustro">' +
+                '<button type="button" class="btn btn-bloque" data-accion="pub:masClaustro">' +
+                U.icono('usuarios', 16) + ' Ver ' +
+                plural(docentes.length - CLAUSTRO_VISIBLE, 'docente más', 'docentes más') +
+                '</button></div>'
+              : '')
           : U.vacio({
               icono: 'usuarios',
               titulo: 'Sin perfiles públicos',
@@ -6623,6 +6643,12 @@ const VistaPublica = (function () {
         var p = args && args.id ? Q.profesor(args.id) : null;
         var nombre = p && p.cv && p.cv.nombre ? p.cv.nombre : 'el currículum';
         U.toast('Demostración: ' + nombre + ' no se descarga en este entorno.', 'aviso');
+      },
+
+      /* Despliega el resto del claustro en pantalla angosta. */
+      'pub:masClaustro': function () {
+        claustroAbierto = true;
+        App.refrescar();
       },
 
       /* Pasa a la pantalla de acceso con las cuentas de ejemplo. */

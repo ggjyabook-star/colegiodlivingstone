@@ -11,6 +11,9 @@ const VistaPublica = (function () {
   var anclaPendiente = '';
   /* Última ruta montada, para decidir si conviene subir el scroll. */
   var ultimaClave = '';
+  /* En pantalla angosta el claustro abre con tres perfiles; el resto se pide. */
+  var CLAUSTRO_VISIBLE = 3;
+  var claustroAbierto = false;
 
   /* Reinicios mínimos para usar <button> con apariencia de bloque. */
   var RESET_BOTON  = 'border:0;font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer';
@@ -486,7 +489,16 @@ const VistaPublica = (function () {
           que dejaron sus alumnos.
         </p>
         ${docentes.length
-          ? '<div class="claustro">' + docentes.map(tarjetaDocente).join('') + '</div>'
+          ? '<div class="claustro' + (claustroAbierto ? ' abierto' : '') + '">' +
+            docentes.map(tarjetaDocente).join('') + '</div>' +
+            /* En teléfono sólo se ven los tres primeros; el resto se pide. */
+            (docentes.length > CLAUSTRO_VISIBLE
+              ? '<div class="mas-claustro">' +
+                '<button type="button" class="btn btn-bloque" data-accion="pub:masClaustro">' +
+                U.icono('usuarios', 16) + ' Ver ' +
+                plural(docentes.length - CLAUSTRO_VISIBLE, 'docente más', 'docentes más') +
+                '</button></div>'
+              : '')
           : U.vacio({
               icono: 'usuarios',
               titulo: 'Sin perfiles públicos',
@@ -1042,6 +1054,12 @@ const VistaPublica = (function () {
         var p = args && args.id ? Q.profesor(args.id) : null;
         var nombre = p && p.cv && p.cv.nombre ? p.cv.nombre : 'el currículum';
         U.toast('Demostración: ' + nombre + ' no se descarga en este entorno.', 'aviso');
+      },
+
+      /* Despliega el resto del claustro en pantalla angosta. */
+      'pub:masClaustro': function () {
+        claustroAbierto = true;
+        App.refrescar();
       },
 
       /* Pasa a la pantalla de acceso con las cuentas de ejemplo. */

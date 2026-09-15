@@ -804,6 +804,10 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 }
 .bloque .intro { color: var(--tinta-2); max-width: 60ch; margin: 0 0 1.5rem; }
 
+/* El botón sólo aparece en pantalla angosta, y sólo mientras haya algo que
+   desplegar: la regla que lo enciende vive en el bloque de teléfono. */
+.mas-claustro { display: none; margin-top: .9rem; }
+
 .claustro { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.1rem; }
 .claustro-item {
   background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-lg);
@@ -1035,6 +1039,10 @@ input.entrada[type="file"] { padding: .34rem .5rem; font-size: .8rem; }
 
   /* En el claustro, las especialidades caben en el perfil: aquí estorban. */
   .claustro-item .chip { display: none; }
+
+  /* Catorce perfiles seguidos son un muro: se abren tres y el resto se pide. */
+  .claustro:not(.abierto) .claustro-item:nth-child(n+4) { display: none; }
+  .claustro:not(.abierto) + .mas-claustro { display: block; }
 
   .sitio-pie { padding: 1.6rem 1.1rem; }
   .sitio-pie .interior { gap: 1.1rem; }
